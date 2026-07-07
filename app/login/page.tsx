@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useRouter } from 'next/navigation';
 
-export default function LoginPage() {
+const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,7 +22,7 @@ export default function LoginPage() {
     });
 
     if (error) {
-      setErrorMsg(`เกิดข้อผิดพลาด: ${error.message === 'Invalid login credentials' ? 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' : error.message}`);
+      setErrorMsg(error.message === 'Invalid login credentials' ? 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' : error.message);
       setLoading(false);
     } else {
       router.push('/');
@@ -30,117 +30,153 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-white font-sans">
-      
-      {/* ฝั่งซ้าย: กราฟิกและแบรนดิ้ง (ซ่อนในหน้าจอมือถือ, โชว์เฉพาะจอใหญ่) */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-green-900 via-green-800 to-emerald-900 overflow-hidden items-center justify-center">
-        {/* ลวดลายตกแต่งพื้นหลัง (วงกลมแบบเบลอ) */}
-        <div className="absolute top-10 -left-20 w-96 h-96 bg-green-500 rounded-full mix-blend-overlay filter blur-[100px] opacity-60"></div>
-        <div className="absolute bottom-10 -right-20 w-96 h-96 bg-yellow-500 rounded-full mix-blend-overlay filter blur-[100px] opacity-40"></div>
+    <div className="flex min-h-screen font-sans bg-[#FCFBF7]">
+      {/* ส่วนด้านซ้าย: ไร่อ้อยและโลโก้ */}
+      <div
+        className="hidden lg:flex w-1/2 items-center justify-center relative bg-gray-900"
+        style={{
+          backgroundImage: "url('/sugarcane-bg.jpg')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
+        {/* ปรับฟิลเตอร์ใหม่: สว่างขึ้น ได้ฟีลแสงเย็น ลดความเขียวด้านล่าง */}
+        <div className="absolute inset-0 bg-gradient-to-b from-orange-400/30 via-amber-500/20 to-emerald-700/20"></div>
         
-        {/* คอนเทนต์ฝั่งซ้าย */}
-        <div className="relative z-10 text-center px-12">
-          <div className="inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-white/10 backdrop-blur-md mb-8 border border-white/20 shadow-2xl">
-            <svg className="w-12 h-12 text-green-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-            </svg>
+        {/* เงาไล่ระดับจากขอบล่าง (บางๆ) เพื่อดันให้โลโก้และข้อความอ่านง่าย โดยไม่ทำให้ภาพมืด */}
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-gray-900/30 to-transparent"></div>
+
+        <div className="text-center relative z-10 flex flex-col items-center">
+          {/* โลโก้ทรงกลม - ปรับสมส่วน ไม่ขาด ไม่แหว่ง */}
+          <div className="mb-6 w-36 h-36 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white/20 shadow-2xl bg-white flex items-center justify-center p-1.5">
+            <img
+              src="/logo.png" 
+              alt="โลโก้ไร่อ้อยจรุงพัฒนานนท์"
+              className="w-full h-full object-contain"
+            />
           </div>
-          <h1 className="text-5xl font-black text-white mb-6 tracking-tight">ไร่อ้อยจรุงพัฒนานนท์</h1>
-          <p className="text-xl text-green-100 font-light leading-relaxed">
+          {/* ข้อความชื่อบริษัทและคำอธิบาย */}
+          <h1 className="text-4xl font-black text-white mb-4 tracking-tight drop-shadow-md">ไร่อ้อยจรุงพัฒนานนท์</h1>
+          <p className="text-lg text-emerald-50 font-light leading-relaxed drop-shadow-sm">
             ระบบ ERP บริหารจัดการค่าจ้าง<br/>และทรัพยากรบุคคลแบบครบวงจร
           </p>
         </div>
       </div>
 
-      {/* ฝั่งขวา: ฟอร์มเข้าสู่ระบบ */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 lg:p-24 bg-gray-50">
+      {/* ส่วนด้านขวา: ฟอร์มล็อกอิน */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center bg-[#FCFBF7] p-8 sm:p-12 lg:p-24">
         <div className="w-full max-w-md">
-          
           {/* หัวข้อฟอร์ม */}
-          <div className="mb-10 text-center lg:text-left">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">ยินดีต้อนรับกลับมา 👋</h2>
-            <p className="text-gray-500">กรุณาเข้าสู่ระบบเพื่อดำเนินการต่อ</p>
+          <div className="mb-8 text-center lg:text-left">
+            <div className="inline-flex items-center text-amber-700 text-xs font-bold tracking-wider mb-4">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mr-2"></span>
+              ฤดูหีบอ้อย 2569
+            </div>
+            <h2 className="text-3xl font-bold text-stone-800 mb-2">ยินดีต้อนรับกลับมา 👋</h2>
+            <p className="text-stone-500">กรุณาเข้าสู่ระบบเพื่อดำเนินการต่อ</p>
           </div>
 
-          {/* แจ้งเตือน Error */}
+          {/* แสดงข้อความแจ้งเตือนเมื่อล็อกอินไม่สำเร็จ */}
           {errorMsg && (
-            <div className="mb-8 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl flex items-start shadow-sm">
-              <svg className="w-5 h-5 text-red-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/>
-              </svg>
-              <p className="text-sm text-red-700 font-medium">{errorMsg}</p>
+            <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-xl text-sm text-red-700 font-medium shadow-sm">
+              {errorMsg}
             </div>
           )}
 
-          {/* ฟอร์ม Login */}
-          <form onSubmit={handleLogin} className="space-y-6">
+          {/* ฟอร์มล็อกอิน */}
+          <form onSubmit={handleLogin} className="space-y-5">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">อีเมลผู้ใช้งาน (Email)</label>
+              <label className="block text-sm font-semibold text-stone-700 mb-2" htmlFor="email">
+                อีเมลผู้ใช้งาน (Email)
+              </label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-400 group-focus-within:text-green-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                  <svg className="h-5 w-5 text-stone-400 group-focus-within:text-amber-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
                   </svg>
                 </div>
                 <input
                   type="email"
+                  id="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full pl-11 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent transition-all shadow-sm"
                   placeholder="admin@jarungphat.com"
+                  required
+                  className="w-full pl-11 pr-4 py-3.5 bg-white border border-stone-200 rounded-xl text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all shadow-sm"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">รหัสผ่าน (Password)</label>
+              <label className="block text-sm font-semibold text-stone-700 mb-2" htmlFor="password">
+                รหัสผ่าน (Password)
+              </label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-400 group-focus-within:text-green-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  <svg className="h-5 w-5 text-stone-400 group-focus-within:text-amber-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                 </div>
                 <input
                   type="password"
+                  id="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full pl-11 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent transition-all shadow-sm"
                   placeholder="••••••••"
+                  required
+                  className="w-full pl-11 pr-4 py-3.5 bg-white border border-stone-200 rounded-xl text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all shadow-sm"
                 />
               </div>
+            </div>
+
+            <div className="flex items-center justify-between text-sm pt-1">
+              <label className="flex items-center text-stone-600 cursor-pointer hover:text-stone-800 transition-colors">
+                <input
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  className="w-4 h-4 rounded border-stone-300 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                />
+                <span className="ml-2">จดจำการเข้าสู่ระบบ</span>
+              </label>
+              <a href="#" className="text-amber-700 font-medium hover:text-amber-800 transition-colors">
+                ลืมรหัสผ่าน?
+              </a>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className={`w-full flex justify-center items-center py-3.5 px-4 rounded-xl shadow-lg text-lg font-bold text-white transition-all transform active:scale-[0.98] ${
-                loading 
-                  ? 'bg-gray-400 cursor-not-allowed' 
-                  : 'bg-green-700 hover:bg-green-800 hover:shadow-green-700/30'
-              }`}
+              className={`w-full flex justify-center items-center py-3.5 px-4 rounded-xl shadow-lg text-lg font-bold text-white transition-all transform active:scale-[0.98] mt-4 bg-gradient-to-b from-[#C49A45] to-[#997328] hover:from-[#d1a854] hover:to-[#a67c2d] shadow-[#997328]/30 ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
             >
-              {loading ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  กำลังเข้าสู่ระบบ...
-                </>
-              ) : (
-                'เข้าสู่ระบบ'
-              )}
+              {loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
             </button>
           </form>
-          
-          <div className="mt-12 text-center lg:text-left">
-            <p className="text-xs text-gray-400 font-medium">© 2026 ไร่อ้อยจรุงพัฒนานนท์ - Internal ERP System</p>
+
+          {/* ข้อความติดต่อและลิขสิทธิ์ */}
+          <div className="mt-8">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-stone-200"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-3 bg-[#FCFBF7] text-stone-400 text-xs">หรือ</span>
+              </div>
+            </div>
+            
+            <p className="text-center text-stone-500 text-sm mt-6">
+              ติดต่อฝ่ายบุคคลหากยังไม่มีบัญชีผู้ใช้งาน
+            </p>
+            
+            <div className="mt-8 text-center flex items-center justify-center text-xs text-stone-400 font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-stone-300 mr-2"></span>
+              © 2026 ไร่อ้อยจรุงพัฒนานนท์ - Internal ERP System
+            </div>
           </div>
-          
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default LoginPage;
