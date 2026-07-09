@@ -1,0 +1,23 @@
+{
+  "name": "ไร่อ้อยจรุงพัฒนานนท์ ERP",
+  "short_name": "ไร่อ้อย ERP",
+  "description": "ระบบจัดการไร่อ้อย",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FCFBF7",
+  "theme_color": "#FCFBF7",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

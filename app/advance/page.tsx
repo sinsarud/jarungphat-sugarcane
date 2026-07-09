@@ -34,6 +34,16 @@ export default function AdvancePaymentPage() {
     return todayStr;
   };
 
+  // 🌟 เพิ่มฟังก์ชันแปลงวันที่ให้อ่านง่าย
+  const formatDateThai = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('th-TH', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
   const [selectedDate, setSelectedDate] = useState(getTodayString());
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [advances, setAdvances] = useState<AdvanceRecord[]>([]);
@@ -49,7 +59,6 @@ export default function AdvancePaymentPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // 1. ดึงชื่อพนักงานเฉพาะคนที่สถานะ Active
       const { data: empData } = await supabase
         .from('employees')
         .select('id, full_name, position')
@@ -58,8 +67,7 @@ export default function AdvancePaymentPage() {
       
       if (empData) setEmployees(empData);
 
-      // 2. ดึงประวัติการเบิกเงินของเดือนนี้มาแสดง
-      const currentMonth = selectedDate.substring(0, 7); // เอาแค่ YYYY-MM
+      const currentMonth = selectedDate.substring(0, 7); 
       const { data: advData } = await supabase
         .from('advance_payments')
         .select('*')
@@ -88,7 +96,7 @@ export default function AdvancePaymentPage() {
     checkAuth();
   }, [router, selectedDate]);
 
-  // ฟังก์ชันคำนวณยอดเบิกรวม (ปรับเพื่อความปลอดภัยของตัวแปร)
+  // ฟังก์ชันคำนวณยอดเบิกรวม
   const totalAdvanceThisMonth = advances.reduce((sum, record) => {
     const resSum = sum + Number(record.amount);
     return resSum;
@@ -121,10 +129,7 @@ export default function AdvancePaymentPage() {
 
     setSaving(true);
     try {
-      const selectedEmp = employees.find(emp => {
-        const isMatch = emp.id === formEmpId;
-        return isMatch;
-      });
+      const selectedEmp = employees.find(emp => emp.id === formEmpId);
       if (!selectedEmp) throw new Error('ไม่พบข้อมูลพนักงานที่เลือก');
 
       const { error } = await supabase.from('advance_payments').insert([{
@@ -173,7 +178,7 @@ export default function AdvancePaymentPage() {
   const mainPageLayout = (
     <div className="min-h-screen bg-[#FCFBF7] pb-24 font-sans relative">
       
-      {/* 🌟 อัปเกรด Header Bar รองรับมือถือ 🌟 */}
+      {/* Header Bar */}
       <div className="bg-white border-b border-stone-200 sticky top-0 z-30 shadow-sm">
         <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-8 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
           <div className="flex items-center space-x-3 sm:space-x-4">
@@ -186,23 +191,34 @@ export default function AdvancePaymentPage() {
             </div>
           </div>
           
-          <button 
-            onClick={openModal} 
-            className="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white px-5 py-3 sm:py-2.5 rounded-xl text-sm font-bold shadow-md shadow-amber-500/20 flex items-center justify-center transition-all active:scale-95"
-          >
-            <span className="mr-1.5 text-base sm:text-lg">💰</span>
-            <span>ลงบัญชีเบิกเงิน</span>
-          </button>
+          <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+            <button 
+              onClick={openModal} 
+              className="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-amber-500/20 flex items-center justify-center transition-all active:scale-95"
+            >
+              <span className="mr-1.5 text-base sm:text-lg">💰</span>
+              <span>ลงบัญชีเบิกเงิน</span>
+            </button>
+
+            <button 
+              onClick={() => router.push('/advance/history')} 
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold rounded-xl transition-colors shadow-sm text-sm"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <span>ดูประวัติ / โหลด Excel</span>
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-8 mt-4 sm:mt-8">
         
-        {/* การ์ดสรุปยอดปรับขนาดให้พอดีบนมือถือ */}
+        {/* การ์ดสรุปยอด */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div className="bg-white border border-stone-200 p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm flex items-center justify-between">
             <div>
-              <p className="text-xs sm:text-sm font-bold text-stone-500 mb-1">ยอดเบิกรวมวันนี้ ({selectedDate})</p>
+              {/* 🌟 ใช้วันที่ภาษาไทยตรงนี้ */}
+              <p className="text-xs sm:text-sm font-bold text-stone-500 mb-1">ยอดเบิกรวมวันนี้ ({formatDateThai(selectedDate)})</p>
               <h3 className="text-2xl sm:text-4xl font-black text-amber-500">฿ {totalAdvanceToday.toLocaleString()}</h3>
             </div>
             <div className="w-12 h-12 sm:w-16 sm:h-16 bg-amber-50 rounded-full flex items-center justify-center text-2xl sm:text-3xl shrink-0">💸</div>
@@ -229,7 +245,7 @@ export default function AdvancePaymentPage() {
             />
           </div>
 
-          {/* 🌟 1. MOBILE VIEW: แสดงแบบการ์ดสวยงาม ไม่ต้องเลื่อนจอซ้ายขวา 🌟 */}
+          {/* 1. MOBILE VIEW: แสดงแบบการ์ดสวยงาม */}
           <div className="block md:hidden divide-y divide-stone-100">
             {advances.length > 0 ? advances.map((adv) => {
               const mobileCard = (
@@ -242,7 +258,8 @@ export default function AdvancePaymentPage() {
                   </button>
                   
                   <div className="pr-12">
-                    <div className="text-xs font-bold text-stone-400 mb-1">📅 วันที่เบิก: {adv.date}</div>
+                    {/* 🌟 ใช้วันที่ภาษาไทยตรงนี้ */}
+                    <div className="text-xs font-bold text-stone-400 mb-1">📅 วันที่เบิก: {formatDateThai(adv.date)}</div>
                     <div className="font-black text-stone-800 text-base">{adv.emp_name}</div>
                     <div className="text-xs font-semibold text-stone-500 mt-1">📝 {adv.note || 'ไม่มีหมายเหตุ'}</div>
                   </div>
@@ -259,7 +276,7 @@ export default function AdvancePaymentPage() {
             )}
           </div>
 
-          {/* 💻 2. DESKTOP VIEW: แสดงตารางตัวเต็มเมื่ออยู่บนจอคอม 💻 */}
+          {/* 2. DESKTOP VIEW: แสดงตารางตัวเต็มเมื่ออยู่บนจอคอม */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -275,7 +292,8 @@ export default function AdvancePaymentPage() {
                 {advances.length > 0 ? advances.map((adv) => {
                   const rowJsx = (
                     <tr key={adv.id} className="hover:bg-stone-50 transition-colors">
-                      <td className="py-4 px-6 text-stone-500 font-bold">{adv.date}</td>
+                      {/* 🌟 ใช้วันที่ภาษาไทยตรงนี้ */}
+                      <td className="py-4 px-6 text-stone-500 font-bold">{formatDateThai(adv.date)}</td>
                       <td className="py-4 px-6 font-black text-stone-800 text-base">{adv.emp_name}</td>
                       <td className="py-4 px-6 text-stone-500">{adv.note || '-'}</td>
                       <td className="py-4 px-6 text-right font-black text-amber-600 text-lg">฿ {Number(adv.amount).toLocaleString()}</td>
@@ -297,14 +315,12 @@ export default function AdvancePaymentPage() {
 
       </div>
 
-      {/* ======================================================= */}
-      {/* 🌟 MODAL: ลงบัญชีเบิกเงิน (ปรับขนาด input ให้กว้างเต็มแถวบนมือถือ) 🌟 */}
-      {/* ======================================================= */}
+      {/* MODAL: ลงบัญชีเบิกเงิน */}
       {showModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-stone-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowModal(false)}></div>
           <div className="bg-white w-full max-w-sm rounded-3xl p-5 sm:p-6 relative z-10 shadow-2xl animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-5 sm:mb-6">
+            <div className="flex justify-between items-center mb-5">
               <h3 className="text-lg sm:text-xl font-black text-stone-800 flex items-center gap-2">
                 💰 ลงบัญชีเบิกเงิน
               </h3>
@@ -314,7 +330,7 @@ export default function AdvancePaymentPage() {
             <form onSubmit={handleSaveAdvance} className="space-y-4">
               <div>
                 <label className="text-xs font-bold text-stone-500 mb-1.5 block">วันที่เบิก</label>
-                <input type="date" required value={formDate} onChange={(e) => setFormDate(e.target.value)} className="w-full px-4 py-2.5 sm:py-3 bg-stone-50 border border-stone-200 rounded-xl font-bold text-stone-800 outline-none focus:ring-2 focus:ring-amber-500 text-sm" />
+                <input type="date" required value={formDate} onChange={(e) => setFormDate(e.target.value)} className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl font-bold text-stone-800 outline-none focus:ring-2 focus:ring-amber-500 text-sm" />
               </div>
 
               <div>
@@ -323,7 +339,7 @@ export default function AdvancePaymentPage() {
                   required 
                   value={formEmpId} 
                   onChange={(e) => setFormEmpId(e.target.value)}
-                  className="w-full px-4 py-2.5 sm:py-3 bg-white border border-amber-400 rounded-xl font-bold text-stone-800 outline-none focus:ring-2 focus:ring-amber-500 shadow-sm text-sm cursor-pointer"
+                  className="w-full px-4 py-2.5 bg-white border border-amber-400 rounded-xl font-bold text-stone-800 outline-none focus:ring-2 focus:ring-amber-500 shadow-sm text-sm cursor-pointer"
                 >
                   <option value="" disabled className="text-stone-400">-- กรุณาเลือกคนงาน --</option>
                   {employees.map(emp => {
@@ -343,7 +359,7 @@ export default function AdvancePaymentPage() {
                     value={formAmount} 
                     onChange={(e) => setFormAmount(e.target.value)} 
                     placeholder="ระบุตัวเลข..." 
-                    className="w-full pl-4 pr-12 py-2.5 sm:py-3 bg-stone-50 border border-stone-200 rounded-xl font-black text-xl text-stone-800 outline-none focus:ring-2 focus:ring-amber-500" 
+                    className="w-full pl-4 pr-12 py-2.5 bg-stone-50 border border-stone-200 rounded-xl font-black text-xl text-stone-800 outline-none focus:ring-2 focus:ring-amber-500" 
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 font-black text-stone-400 text-sm">฿</span>
                 </div>
@@ -351,10 +367,10 @@ export default function AdvancePaymentPage() {
 
               <div>
                 <label className="text-xs font-bold text-stone-500 mb-1.5 block">หมายเหตุ / เบิกไปทำอะไร (ไม่บังคับ)</label>
-                <input type="text" value={formNote} onChange={(e) => setFormNote(e.target.value)} placeholder="เช่น เบิกค่าข้าว, ซื้อของ..." className="w-full px-4 py-2.5 sm:py-3 bg-stone-50 border border-stone-200 rounded-xl font-bold text-stone-600 outline-none focus:ring-2 focus:ring-amber-500 text-xs sm:text-sm" />
+                <input type="text" value={formNote} onChange={(e) => setFormNote(e.target.value)} placeholder="เช่น เบิกค่าข้าว, ซื้อของ..." className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl font-bold text-stone-600 outline-none focus:ring-2 focus:ring-amber-500 text-xs sm:text-sm" />
               </div>
 
-              <button type="submit" disabled={saving} className={`w-full mt-6 py-3.5 sm:py-4 rounded-xl font-black text-white text-sm sm:text-base shadow-lg transition-all ${saving ? 'bg-stone-300' : 'bg-amber-500 hover:bg-amber-600 active:scale-95 shadow-amber-500/30'}`}>
+              <button type="submit" disabled={saving} className={`w-full mt-6 py-3.5 rounded-xl font-black text-white text-sm shadow-lg transition-all ${saving ? 'bg-stone-300' : 'bg-amber-500 hover:bg-amber-600 active:scale-95 shadow-amber-500/30'}`}>
                 {saving ? 'กำลังบันทึก...' : 'บันทึกรายการเบิก'}
               </button>
             </form>
@@ -362,21 +378,19 @@ export default function AdvancePaymentPage() {
         </div>
       )}
 
-      {/* ======================================================= */}
-      {/* 🌟 POPUP แจ้งเตือนสิทธิ์ 🌟 */}
-      {/* ======================================================= */}
+      {/* POPUP แจ้งเตือน */}
       {popup.show && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-stone-900/40 backdrop-blur-xs animate-in fade-in" onClick={() => setPopup({ show: false, type: '', message: '' })}></div>
           <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl relative z-10 text-center animate-in fade-in zoom-in-95 duration-200 border border-stone-100">
             {popup.type === 'success' ? (
-              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4"><svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg></div>
+              <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4"><svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg></div>
             ) : (
-              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4"><svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg></div>
+              <div className="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4"><svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg></div>
             )}
             <h3 className="text-base sm:text-lg font-black text-stone-800 mb-2">{popup.type === 'success' ? 'สำเร็จ!' : 'เกิดข้อผิดพลาด'}</h3>
             <p className="text-xs sm:text-sm text-stone-500 mb-6 leading-relaxed">{popup.message}</p>
-            <button onClick={() => setPopup({ show: false, type: '', message: '' })} className={`w-full py-2.5 sm:py-3 font-bold rounded-xl text-white shadow-md text-sm ${popup.type === 'success' ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-red-500 hover:bg-red-600'}`}>ตกลง</button>
+            <button onClick={() => setPopup({ show: false, type: '', message: '' })} className={`w-full py-2.5 font-bold rounded-xl text-white shadow-md text-sm ${popup.type === 'success' ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-red-500 hover:bg-red-600'}`}>ตกลง</button>
           </div>
         </div>
       )}

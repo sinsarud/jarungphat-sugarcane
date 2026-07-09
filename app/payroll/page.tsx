@@ -65,6 +65,7 @@ export default function PayrollPage() {
     
     if (!empId) return;
     
+    loading;
     setLoading(true);
     try {
       // ดึงค่าแรง (ที่ยังไม่ได้จ่าย)
@@ -208,7 +209,7 @@ export default function PayrollPage() {
       
       {/* Header Bar */}
       <div className="bg-white border-b border-stone-200 sticky top-0 z-30 shadow-sm print:hidden">
-        <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4 flex items-center justify-between">
+        <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center space-x-3 sm:space-x-4">
             <button onClick={() => router.push('/')} className="p-2 bg-stone-50 hover:bg-stone-100 rounded-xl transition-colors shrink-0">
               <svg className="w-6 h-6 text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
@@ -218,6 +219,16 @@ export default function PayrollPage() {
               <p className="text-[10px] sm:text-xs text-stone-500 mt-0.5">ดึงข้อมูลอัตโนมัติ คำนวณหักลบ และยกยอดหนี้</p>
             </div>
           </div>
+
+          {/* 🌟 เพิ่มปุ่ม "ดูประวัติ / โหลด Excel" ฝั่งขวาบนตรงนี้ครับ 🌟 */}
+          <button 
+            type="button"
+            onClick={() => router.push('/payroll/history')} 
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold rounded-xl transition-colors shadow-sm text-sm"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <span>ดูประวัติ / โหลด Excel</span>
+          </button>
         </div>
       </div>
 
@@ -225,12 +236,8 @@ export default function PayrollPage() {
       <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 mt-4 sm:mt-6 lg:mt-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 lg:gap-8">
           
-          {/* ========================================= */}
-          {/* ฝั่งซ้าย: แบบฟอร์มแสดงและกรอกข้อมูลบัญชี */}
-          {/* ========================================= */}
+          {/* ฝั่งซ้าย */}
           <div className="lg:col-span-8 space-y-4 sm:space-y-6">
-            
-            {/* กล่องเลือกคนงาน (ปรับปรุงการเว้นระยะบนจอเล็ก) */}
             <div className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-stone-200 shadow-sm">
               <label className="block text-[10px] sm:text-xs font-bold text-stone-500 uppercase mb-2 sm:mb-3 tracking-wider">
                 👤 เลือกคนงานที่มาขอคิดเงิน
@@ -247,7 +254,7 @@ export default function PayrollPage() {
                   ))}
                 </select>
                 <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-stone-400">
-                  <svg className="w-5 h-5 sm:w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                  <svg className="w-5 h-5 sm:w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7-7-7-7" /></svg>
                 </div>
               </div>
             </div>
@@ -255,7 +262,7 @@ export default function PayrollPage() {
             {selectedEmpId && (
               <div className="bg-white rounded-2xl sm:rounded-[2rem] border border-stone-200 shadow-sm p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 animate-in fade-in duration-300">
                 
-                {/* 1. ส่วนรายได้วันทำงาน (ดึงอัตโนมัติ) */}
+                {/* 1. วันทำงานสะสม */}
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-bold text-stone-800 text-sm sm:text-base flex items-center">
@@ -295,7 +302,7 @@ export default function PayrollPage() {
                   )}
                 </div>
 
-                {/* 2. ส่วนเงินพิเศษ (บวกเพิ่ม) */}
+                {/* 2. เงินพิเศษ */}
                 <div className="border-t border-stone-100 pt-5 sm:pt-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
                     <h3 className="font-bold text-stone-800 text-sm sm:text-base flex items-center">
@@ -318,7 +325,7 @@ export default function PayrollPage() {
                   </div>
                 </div>
 
-                {/* 3. รายการหักอัตโนมัติ (ดึงจากระบบ) */}
+                {/* 3. รายการหักอัตโนมัติ */}
                 <div className="flex flex-col border-t border-stone-100 pt-5 sm:pt-6">
                   <h3 className="font-bold text-stone-800 text-sm sm:text-base mb-4 flex items-center">
                     <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-rose-500 mr-2 sm:mr-3 shrink-0"></span> รายการเบิกเงินล่วงหน้า (ดึงจากระบบ)
@@ -349,7 +356,7 @@ export default function PayrollPage() {
                   )}
                 </div>
 
-                {/* 4. รายจ่าย (หักทำมือหน้างาน) */}
+                {/* 4. หักรายการอื่นๆ */}
                 <div className="flex flex-col mb-4 mt-10 border-t border-stone-100 pt-6">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="font-bold text-stone-800 text-sm sm:text-base flex items-center">
@@ -386,7 +393,7 @@ export default function PayrollPage() {
             )}
           </div>
 
-          {/* ฝั่งขวา: สรุปบิลยอดเงินสุทธิ (Sticky ยึดจอเมื่อเลื่อน) */}
+          {/* ฝั่งขวา */}
           <div className="lg:col-span-4 relative mt-4 lg:mt-0">
             <div className="lg:sticky lg:top-28 space-y-6">
               
@@ -432,13 +439,13 @@ export default function PayrollPage() {
         </div>
       </div>
 
-      {/* POPUP ยืนยัน/สำเร็จ/เออเร่อ */}
+      {/* POPUP แจ้งเตือน */}
       {popup.show && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-stone-900/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => popup.type !== 'confirm' && setPopup({ show: false, type: '', message: '' })}></div>
           <div className="bg-white w-full max-w-sm rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-2xl relative z-10 animate-in fade-in zoom-in-95 duration-200 text-center border border-stone-100">
             {popup.type === 'confirm' && (
-              <div className={`w-14 h-14 sm:w-16 sm:h-16 ${netPay < 0 ? 'bg-rose-100 text-rose-600' : 'bg-purple-100 text-purple-600'} rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-5`}>
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-5">
                 <svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               </div>
             )}

@@ -192,14 +192,26 @@ export default function AttendancePage() {
             </div>
           </div>
           
-          <div className="flex items-center gap-3 bg-stone-50 sm:bg-transparent p-2 sm:p-0 rounded-xl border sm:border-none border-stone-200">
-            <label className="text-xs sm:text-sm font-bold text-stone-600 shrink-0 ml-2 sm:ml-0">ประจำวันที่:</label>
-            <input 
-              type="date" 
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-full sm:w-auto px-3 py-2 bg-white border border-stone-200 rounded-lg sm:rounded-xl text-stone-800 font-bold outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm text-sm"
-            />
+          {/* 🌟 ปรับปรุงส่วนปุ่มด้านขวา: เพิ่มปุ่มดูประวัติย้อนหลัง 🌟 */}
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <div className="flex w-full sm:w-auto items-center gap-2 bg-stone-50 sm:bg-transparent p-2 sm:p-0 rounded-xl border sm:border-none border-stone-200">
+              <label className="text-xs sm:text-sm font-bold text-stone-600 shrink-0 ml-2 sm:ml-0">ประจำวันที่:</label>
+              <input 
+                type="date" 
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-full sm:w-auto px-3 py-2 bg-white border border-stone-200 rounded-lg sm:rounded-xl text-stone-800 font-bold outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm text-sm"
+              />
+            </div>
+            
+            {/* ปุ่มทางลัดไปหน้าดูประวัติ / โหลด Excel */}
+            <button 
+              onClick={() => router.push('/attendance/history')} 
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold rounded-xl transition-colors shadow-sm text-sm"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              ดูประวัติ / โหลด Excel
+            </button>
           </div>
         </div>
       </div>

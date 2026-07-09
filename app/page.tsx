@@ -9,13 +9,13 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('');
 
-  // State สำหรับข้อมูลบน Dashboard (เพิ่ม harvestingPlots สำหรับดึงข้อมูลจริง)
+  // State สำหรับข้อมูลบน Dashboard
   const [stats, setStats] = useState({
     presentToday: 0,
     totalEmployees: 5, 
     advanceRequests: 0,
     estimatedWageToday: 0,
-    harvestingPlots: '-' // เพิ่มตัวเก็บข้อมูลแปลงจริงตรงนี้
+    harvestingPlots: '-' 
   });
 
   // ฟังก์ชันดึงข้อมูล Dashboard ทั้งหมดจากฐานข้อมูลจริง
@@ -308,8 +308,8 @@ export default function HomePage() {
               <div className="relative z-10 text-stone-300 group-hover:text-purple-500 transition-colors hidden sm:block"><svg className="w-7 h-7 lg:w-8 lg:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg></div>
             </button>
 
-            {/* 🌟 เมนู 7 [เพิ่มใหม่]: จัดการบัญชีผู้ใช้งานระบบ 🌟 */}
-            <button onClick={() => router.push('/users')} className="group flex items-center p-5 sm:p-6 lg:p-8 bg-white border border-stone-200 rounded-3xl shadow-sm hover:border-rose-400 hover:shadow-lg hover:-translate-y-1.5 transition-all duration-300 text-left w-full relative overflow-hidden">
+            {/* เมนู 7: จัดการบัญชีผู้ใช้งานระบบ */}
+            <button onClick={() => router.push('/admin/users')} className="group flex items-center p-5 sm:p-6 lg:p-8 bg-white border border-stone-200 rounded-3xl shadow-sm hover:border-rose-400 hover:shadow-lg hover:-translate-y-1.5 transition-all duration-300 text-left w-full relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 sm:w-40 sm:h-40 bg-rose-50 rounded-full -mr-10 -mt-10 sm:-mr-12 sm:-mt-12 transition-transform group-hover:scale-110"></div>
               <div className="relative z-10 w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mr-5 lg:mr-8 flex-shrink-0">
                 <svg className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -321,6 +321,23 @@ export default function HomePage() {
                 <p className="text-sm sm:text-base text-stone-500 mt-1.5 lg:mt-2">สร้างบัญชีผู้ใช้งานระบบให้กับพนักงานแอดมิน</p>
               </div>
               <div className="relative z-10 text-stone-300 group-hover:text-rose-500 transition-colors hidden sm:block">
+                <svg className="w-7 h-7 lg:w-8 lg:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+              </div>
+            </button>
+
+            {/* 🌟 เมนู 8 [เพิ่มใหม่]: ประวัติการใช้งานระบบ 🌟 */}
+            <button onClick={() => router.push('/history')} className="group flex items-center p-5 sm:p-6 lg:p-8 bg-white border border-stone-200 rounded-3xl shadow-sm hover:border-slate-400 hover:shadow-lg hover:-translate-y-1.5 transition-all duration-300 text-left w-full relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 sm:w-40 sm:h-40 bg-slate-50 rounded-full -mr-10 -mt-10 sm:-mr-12 sm:-mt-12 transition-transform group-hover:scale-110"></div>
+              <div className="relative z-10 w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-slate-100 text-slate-600 rounded-2xl flex items-center justify-center mr-5 lg:mr-8 flex-shrink-0">
+                <svg className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="relative z-10 flex-grow">
+                <h4 className="text-lg sm:text-xl lg:text-2xl font-bold text-stone-800 group-hover:text-slate-700 transition-colors">ประวัติการใช้งานระบบ</h4>
+                <p className="text-sm sm:text-base text-stone-500 mt-1.5 lg:mt-2">ตรวจสอบ Log การทำงานย้อนหลัง</p>
+              </div>
+              <div className="relative z-10 text-stone-300 group-hover:text-slate-500 transition-colors hidden sm:block">
                 <svg className="w-7 h-7 lg:w-8 lg:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
               </div>
             </button>
