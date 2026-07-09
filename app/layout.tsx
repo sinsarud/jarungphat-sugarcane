@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// 🌟 สเต็ปที่ 2.1: เพิ่มตัวตั้งค่า Viewport ล็อกการซูมหน้าจอ ให้ฟีลลิ่งแอปมือถือจริง
+// 🌟 สเต็ปที่ 2.1: ตัวตั้งค่า Viewport ล็อกการซูมหน้าจอ ให้ฟีลลิ่งแอปมือถือจริง
 export const viewport: Viewport = {
   themeColor: "#FCFBF7",
   width: "device-width",
@@ -22,11 +22,14 @@ export const viewport: Viewport = {
   userScalable: false, // ห้ามผู้ใช้งานกางนิ้วซูมจอเข้าออก หน้าต่างจะนิ่งเหมือนแอปแท้
 };
 
-// 🌟 สเต็ปที่ 2.2: อัปเกรด Metadata เชื่อมต่อไฟล์ Manifest และเปิดสิทธิ์แอปบน iPhone
+// 🌟 สเต็ปที่ 2.2: อัปเกรด Metadata เชื่อมต่อไฟล์ Manifest และบังคับไอคอนใหม่บน iPhone
 export const metadata: Metadata = {
   title: "ไร่อ้อยจรุงพัฒนานนท์ | Internal ERP",
   description: "ระบบบริหารจัดการไร่อ้อยแบบครบวงจร - จรุงพัฒนานนท์",
   manifest: "/manifest.json", // ผูกบัตรประชาชนแอป
+  icons: {
+    apple: "/iconapp.png", // 👈 🌟 เพิ่มบรรทัดนี้เพื่อบังคับให้ iPhone ดึงรูป iconapp.png ไปเป็นไอคอนแอป (ถ้าไฟล์ของเถ้าแก่เป็นนามสกุล .jpg ให้แก้เป็น /iconapp.jpg นะครับ)
+  },
   appleWebApp: {
     capable: true, // เปิดสิทธิ์ให้ซ่อนแถบ URL คอนโทรลของ Safari
     statusBarStyle: "default",
