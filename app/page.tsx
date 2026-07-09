@@ -146,9 +146,18 @@ export default function HomePage() {
       <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-8 md:px-12 lg:px-20 mt-6 sm:mt-8 md:mt-12">
         
         {/* ข้อความต้อนรับ */}
-        <div className="mb-8 md:mb-10">
+        <div className="mb-6 md:mb-8">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-stone-800 mb-2 lg:mb-3 tracking-tight">สวัสดี, {userName} 👋</h2>
           <p className="text-sm sm:text-base text-stone-500">ภาพรวมการทำงานประจำวันที่ <span className="font-semibold">{new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</span></p>
+        </div>
+
+        {/* 🌟 รูป Banner ไร่อ้อย (เพิ่ม max-w-5xl และ mx-auto เพื่อคุมขนาดบน PC ให้จัดกึ่งกลางและไม่ใหญ่เกินไป) 🌟 */}
+        <div className="w-full max-w-5xl mx-auto mb-8 md:mb-12">
+          <img
+            src="/farm-banner.jpg"
+            alt="ไร่อ้อยจรุงพัฒนานนท์"
+            className="w-full h-auto rounded-2xl sm:rounded-3xl shadow-md border border-stone-200 transition-transform duration-500 hover:scale-[1.01]"
+          />
         </div>
 
         {/* Section 1: Dashboard ภาพรวม */}
@@ -325,7 +334,7 @@ export default function HomePage() {
               </div>
             </button>
 
-            {/* 🌟 เมนู 8 [เพิ่มใหม่]: ประวัติการใช้งานระบบ 🌟 */}
+            {/* เมนู 8: ประวัติการใช้งานระบบ */}
             <button onClick={() => router.push('/history')} className="group flex items-center p-5 sm:p-6 lg:p-8 bg-white border border-stone-200 rounded-3xl shadow-sm hover:border-slate-400 hover:shadow-lg hover:-translate-y-1.5 transition-all duration-300 text-left w-full relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 sm:w-40 sm:h-40 bg-slate-50 rounded-full -mr-10 -mt-10 sm:-mr-12 sm:-mt-12 transition-transform group-hover:scale-110"></div>
               <div className="relative z-10 w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-slate-100 text-slate-600 rounded-2xl flex items-center justify-center mr-5 lg:mr-8 flex-shrink-0">
