@@ -151,7 +151,7 @@ export default function HomePage() {
           <p className="text-sm sm:text-base text-stone-500">ภาพรวมการทำงานประจำวันที่ <span className="font-semibold">{new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</span></p>
         </div>
 
-        {/* 🌟 รูป Banner ไร่อ้อย (เพิ่ม max-w-5xl และ mx-auto เพื่อคุมขนาดบน PC ให้จัดกึ่งกลางและไม่ใหญ่เกินไป) 🌟 */}
+        {/* 🌟 รูป Banner ไร่อ้อย 🌟 */}
         <div className="w-full max-w-5xl mx-auto mb-8 md:mb-12">
           <img
             src="/farm-banner.jpg"
@@ -347,6 +347,40 @@ export default function HomePage() {
                 <p className="text-sm sm:text-base text-stone-500 mt-1.5 lg:mt-2">ตรวจสอบ Log การทำงานย้อนหลัง</p>
               </div>
               <div className="relative z-10 text-stone-300 group-hover:text-slate-500 transition-colors hidden sm:block">
+                <svg className="w-7 h-7 lg:w-8 lg:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+              </div>
+            </button>
+
+            {/* 🌟 เมนู 9 [เพิ่มใหม่]: ระบบคำนวณเงินค่าอ้อยประจำงวด 🌟 */}
+            <button onClick={() => router.push('/sugarcane')} className="group flex items-center p-5 sm:p-6 lg:p-8 bg-white border border-stone-200 rounded-3xl shadow-sm hover:border-orange-400 hover:shadow-lg hover:-translate-y-1.5 transition-all duration-300 text-left w-full relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 sm:w-40 sm:h-40 bg-orange-50 rounded-full -mr-10 -mt-10 sm:-mr-12 sm:-mt-12 transition-transform group-hover:scale-110"></div>
+              <div className="relative z-10 w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center mr-5 lg:mr-8 flex-shrink-0">
+                <svg className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z" />
+                </svg>
+              </div>
+              <div className="relative z-10 flex-grow">
+                <h4 className="text-lg sm:text-xl lg:text-2xl font-bold text-stone-800 group-hover:text-orange-700 transition-colors">ระบบคำนวณเงินค่าอ้อย</h4>
+                <p className="text-sm sm:text-base text-stone-500 mt-1.5 lg:mt-2">สรุปบิลน้ำหนักสุทธิแยกงวด อ้อยสด และอ้อยเผา</p>
+              </div>
+              <div className="relative z-10 text-stone-300 group-hover:text-orange-500 transition-colors hidden sm:block">
+                <svg className="w-7 h-7 lg:w-8 lg:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+              </div>
+            </button>
+
+            {/* 🌟 เมนู 10 [เพิ่มใหม่]: ระบบสำรองข้อมูล 🌟 */}
+            <button onClick={() => router.push('/backup')} className="group flex items-center p-5 sm:p-6 lg:p-8 bg-white border border-stone-200 rounded-3xl shadow-sm hover:border-gray-400 hover:shadow-lg hover:-translate-y-1.5 transition-all duration-300 text-left w-full relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 sm:w-40 sm:h-40 bg-gray-50 rounded-full -mr-10 -mt-10 sm:-mr-12 sm:-mt-12 transition-transform group-hover:scale-110"></div>
+              <div className="relative z-10 w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gray-100 text-gray-600 rounded-2xl flex items-center justify-center mr-5 lg:mr-8 flex-shrink-0">
+                <svg className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                </svg>
+              </div>
+              <div className="relative z-10 flex-grow">
+                <h4 className="text-lg sm:text-xl lg:text-2xl font-bold text-stone-800 group-hover:text-gray-700 transition-colors">ระบบสำรองข้อมูล</h4>
+                <p className="text-sm sm:text-base text-stone-500 mt-1.5 lg:mt-2">Backup & Restore ฐานข้อมูล</p>
+              </div>
+              <div className="relative z-10 text-stone-300 group-hover:text-gray-500 transition-colors hidden sm:block">
                 <svg className="w-7 h-7 lg:w-8 lg:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
               </div>
             </button>
