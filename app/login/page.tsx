@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useRouter } from 'next/navigation';
+// 🔐 Import ฟังก์ชันบันทึก Log ส่วนกลาง
+import { logAudit } from '../lib/auditLogger';
 
 const LoginPage = () => {
   const [username, setUsername] = useState(''); 
@@ -64,11 +66,27 @@ const LoginPage = () => {
       });
 
       if (error) {
+        // 🚨 บันทึก Log: ล็อกอินล้มเหลว (Security Alert)
+        await logAudit({
+          module: 'ความปลอดภัยระบบ',
+          action: 'SECURITY',
+          details: `ความพยายามล็อกอินล้มเหลว: @${inputUser} (รหัสผ่านผิด)`,
+          username: inputUser || 'Unknown'
+        });
+
         if (error.message.includes('Invalid login credentials')) {
           throw new Error('ชื่อผู้ใช้งาน หรือ รหัสผ่านไม่ถูกต้อง');
         }
         throw error;
       }
+
+      // 🚨 บันทึก Log: ล็อกอินสำเร็จ
+      await logAudit({
+        module: 'ระบบเข้าใช้งาน (Auth)',
+        action: 'LOGIN',
+        details: 'เข้าสู่ระบบสำเร็จ',
+        username: inputUser
+      });
 
       if (rememberMe) {
         localStorage.setItem('rememberedUsername', inputUser);
@@ -111,6 +129,14 @@ const LoginPage = () => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'ไม่สามารถแก้ไขรหัสผ่านได้');
 
+      // 🚨 บันทึก Log: การกู้คืนรหัสผ่านด้วยพินผู้จัดการ
+      await logAudit({
+        module: 'ความปลอดภัยระบบ',
+        action: 'UPDATE',
+        details: `ผู้ดูแลระบบกู้คืนรหัสผ่านใหม่ให้ผู้ใช้: @${forgotUsername}`,
+        username: 'Admin_Master'
+      });
+
       setShowForgotModal(false);
       setPopup({ 
         show: true, 
@@ -122,6 +148,14 @@ const LoginPage = () => {
       setForgotNewPassword('');
       setMasterPin('');
     } catch (error: any) {
+      // 🚨 บันทึก Log: การกู้คืนรหัสผ่านล้มเหลว (อาจจะพิมพ์พินผิด)
+      await logAudit({
+        module: 'ความปลอดภัยระบบ',
+        action: 'SECURITY',
+        details: `ความพยายามกู้รหัสผ่านล้มเหลว (@${forgotUsername}): ${error.message}`,
+        username: 'Unknown'
+      });
+
       setPopup({ show: true, type: 'error', message: error.message });
     } finally {
       setResetLoading(false);
@@ -249,7 +283,6 @@ const LoginPage = () => {
               </div>
 
               <div className="pt-2 border-t border-stone-100">
-                {/* 🌟 เปลี่ยนช่องรหัสพินให้ดูเป็นส่วนของระบบความปลอดภัย 🌟 */}
                 <label className="text-[11px] font-bold text-red-600 block mb-1">🔑 รหัสพินอนุมัติของเถ้าแก่ / ผู้จัดการ (Admin Only)</label>
                 <input 
                   type="password" 

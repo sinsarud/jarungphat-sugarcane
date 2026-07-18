@@ -9,8 +9,22 @@ export default function BackupRestorePage() {
   const [loading, setLoading] = useState(false);
   const [cloudFiles, setCloudFiles] = useState<any[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(true);
+  const [syncing, setSyncing] = useState(false);
 
-  // 🌟 อัปเกรด Notify State ให้รองรับปุ่ม ยืนยัน/ยกเลิก
+  // 🌟 Full Backup: ตารางหลักทั้งหมด 10 ระบบ
+  const targetTables = [
+    'plots', 
+    'daily_attendance', 
+    'advance_payments', 
+    'employees', 
+    'inventory',
+    'payroll',
+    'users',
+    'history',
+    'sugarcane_deliveries',
+    'truck_quota_configs'
+  ];
+
   const [notify, setNotify] = useState<{
     isOpen: boolean;
     type: 'success' | 'warning' | 'error' | 'confirm';
@@ -23,12 +37,66 @@ export default function BackupRestorePage() {
     setNotify({ isOpen: true, type, title, message });
   };
 
-  // 🌟 ฟังก์ชันเรียก Modal แบบมีปุ่ม ยืนยัน/ยกเลิก
   const showConfirm = (title: string, message: string, onConfirm: () => void) => {
     setNotify({ isOpen: true, type: 'confirm', title, message, onConfirm });
   };
 
   const closeNotify = () => setNotify(prev => ({ ...prev, isOpen: false }));
+
+  // 🌟 ฟังก์ชัน: เช็คและรัน Auto Backup
+  const checkAndRunAutoBackup = async () => {
+    setSyncing(true);
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const fileName = `backup-full-${today}.json`;
+
+      const { data: files, error: listError } = await supabase.storage.from('backups').list();
+      if (listError) throw listError;
+
+      const alreadyBackedUpToday = files?.some(f => f.name === fileName);
+
+      if (!alreadyBackedUpToday) {
+        console.log("Triggering Auto-Backup for today...");
+        const fullData: any = {
+          version: '3.0_Full_ERP_System',
+          backup_date: new Date().toISOString()
+        };
+        
+        for (const table of targetTables) {
+          const { data, error } = await supabase.from(table).select('*');
+          if (!error && data) {
+            fullData[table] = data;
+          }
+        }
+
+        const jsonString = JSON.stringify(fullData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+
+        await supabase.storage.from('backups').upload(fileName, blob, { upsert: true });
+        
+        // 💡 แก้ไข TypeScript Error ตรงนี้: จัดการค่า null
+        if (files && files.length >= 15) {
+          const sortedFiles = files.sort((a, b) => {
+            const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+            const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+            return dateA - dateB;
+          });
+          const filesToDelete = sortedFiles.slice(0, sortedFiles.length - 14).map(f => f.name);
+          if (filesToDelete.length > 0) {
+            await supabase.storage.from('backups').remove(filesToDelete);
+          }
+        }
+      }
+
+      await fetchCloudBackups();
+
+    } catch (error) {
+      console.error("Auto Backup Failed:", error);
+    } finally {
+      setSyncing(false);
+      setLoadingFiles(false);
+    }
+  };
 
   const fetchCloudBackups = async () => {
     setLoadingFiles(true);
@@ -46,48 +114,37 @@ export default function BackupRestorePage() {
   };
 
   useEffect(() => {
-    fetchCloudBackups();
+    checkAndRunAutoBackup();
   }, []);
 
-  // 🗄️ ดึงข้อมูล Full ERP ลงเครื่อง
   const handleBackup = async () => {
     setLoading(true);
     try {
-      const { data: plots } = await supabase.from('plots').select('*');
-      const { data: attendance } = await supabase.from('daily_attendance').select('*');
-      const { data: advances } = await supabase.from('advance_payments').select('*');
-      const { data: employees } = await supabase.from('employees').select('*');
-      const { data: inventory } = await supabase.from('inventory').select('*');
-      const { data: payroll } = await supabase.from('payroll').select('*');
-      const { data: users } = await supabase.from('users').select('*');
-      const { data: history } = await supabase.from('history').select('*');
-      const { data: deliveries } = await supabase.from('sugarcane_deliveries').select('*');
-      const { data: configs } = await supabase.from('truck_quota_configs').select('*');
-
-      const backupPayload = {
+      const fullData: any = {
         version: '3.0_Full_ERP_System',
-        backup_date: new Date().toISOString(),
-        plots: plots || [],
-        daily_attendance: attendance || [],
-        advance_payments: advances || [],
-        employees: employees || [],
-        inventory: inventory || [],
-        payroll: payroll || [],
-        users: users || [],
-        history: history || [],
-        sugarcane_deliveries: deliveries || [],
-        truck_quota_configs: configs || []
+        backup_date: new Date().toISOString()
       };
 
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupPayload, null, 2));
+      for (const table of targetTables) {
+        const { data, error } = await supabase.from(table).select('*');
+        if (!error && data) {
+          fullData[table] = data;
+        }
+      }
+
+      const jsonString = JSON.stringify(fullData, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
       const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `ไร่อ้อย_Full_ERP_Backup_${new Date().toISOString().split('T')[0]}.json`);
+      downloadAnchor.href = url;
+      downloadAnchor.download = `ไร่อ้อย_Full_ERP_Backup_${new Date().toISOString().split('T')[0]}.json`;
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
-      downloadAnchor.remove();
+      document.body.removeChild(downloadAnchor);
+      URL.revokeObjectURL(url);
 
-      showAlert('success', 'สำรองข้อมูลสำเร็จ!', 'ดาวน์โหลดข้อมูลครบทั้ง 9 ระบบหลักเรียบร้อยแล้วครับ');
+      showAlert('success', 'สำรองข้อมูลสำเร็จ!', 'ดาวน์โหลดข้อมูลลงเครื่องเรียบร้อยแล้วครับ');
     } catch (error: any) {
       showAlert('error', 'เกิดข้อผิดพลาดในการสำรองข้อมูล', error.message);
     } finally {
@@ -95,7 +152,6 @@ export default function BackupRestorePage() {
     }
   };
 
-  // ♻️ กู้คืนข้อมูล (Restore) กลับเข้าทุกตาราง
   const handleRestore = (e: React.ChangeEvent<HTMLInputElement>) => {
     const target = e.target as HTMLInputElement;
     const file = target.files?.[0];
@@ -110,26 +166,17 @@ export default function BackupRestorePage() {
           throw new Error('ไฟล์ไม่ถูกต้อง หรือไม่ใช่ไฟล์สำรองข้อมูลของระบบนี้');
         }
 
-        // 🌟 เปลี่ยนมาใช้ Pop-up สวยๆ ของเราแทน
         showConfirm(
           '⚠️ คำเตือนอันตราย!',
           'คุณกำลังกู้คืนข้อมูลแบบ Full ERP (เขียนทับทั้งระบบ)\nแน่ใจหรือไม่ว่าต้องการดำเนินการต่อ?',
           async () => {
             setLoading(true);
             try {
-              // ไล่อัปเดตข้อมูลทีละตาราง ถ้ามีข้อมูลใน JSON
-              if (json.plots?.length > 0) await supabase.from('plots').upsert(json.plots);
-              if (json.employees?.length > 0) await supabase.from('employees').upsert(json.employees);
-              if (json.users?.length > 0) await supabase.from('users').upsert(json.users);
-              if (json.inventory?.length > 0) await supabase.from('inventory').upsert(json.inventory);
-              if (json.truck_quota_configs?.length > 0) await supabase.from('truck_quota_configs').upsert(json.truck_quota_configs);
-              
-              if (json.daily_attendance?.length > 0) await supabase.from('daily_attendance').upsert(json.daily_attendance);
-              if (json.advance_payments?.length > 0) await supabase.from('advance_payments').upsert(json.advance_payments);
-              if (json.payroll?.length > 0) await supabase.from('payroll').upsert(json.payroll);
-              if (json.sugarcane_deliveries?.length > 0) await supabase.from('sugarcane_deliveries').upsert(json.sugarcane_deliveries);
-              if (json.history?.length > 0) await supabase.from('history').upsert(json.history);
-
+              for (const table of targetTables) {
+                if (json[table] && json[table].length > 0) {
+                  await supabase.from(table).upsert(json[table]);
+                }
+              }
               showAlert('success', 'กู้คืนข้อมูลทั้งระบบสำเร็จ!', 'ข้อมูลทุกระบบถูกอัปเดตกลับคืนเรียบร้อยแล้วครับ');
             } catch (error: any) {
               showAlert('error', 'กู้คืนข้อมูลล้มเหลว', 'ไม่สามารถบันทึกข้อมูลได้: ' + error.message);
@@ -165,10 +212,9 @@ export default function BackupRestorePage() {
   };
 
   const deleteCloudFile = (fileName: string) => {
-    // 🌟 เปลี่ยนมาใช้ Pop-up สวยๆ ของเราแทน ไอ้ window.confirm
     showConfirm(
       'ยืนยันการลบไฟล์',
-      `คุณต้องการลบไฟล์สำรอง ${fileName} ใช่หรือไม่?\n(ลบแล้วกู้คืนไม่ได้นะครับ)`,
+      `คุณต้องการลบไฟล์สำรอง ${fileName} ใช่หรือไม่?\n(ลบแล้วไม่สามารถกู้คืนได้)`,
       async () => {
         try {
           const { error } = await supabase.storage.from('backups').remove([fileName]);
@@ -185,60 +231,65 @@ export default function BackupRestorePage() {
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB'];
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   return (
-    <div className="min-h-screen bg-[#FCFBF7] font-sans pb-16">
+    <div className="min-h-screen bg-[#F8FAFC] font-sans pb-16 selection:bg-orange-500 selection:text-white">
       
-      {/* Header */}
-      <div className="bg-white border-b border-stone-200 sticky top-0 z-30 shadow-sm">
-        <div className="w-full max-w-[1000px] mx-auto px-4 sm:px-8 py-4 flex items-center gap-4">
-          <button onClick={() => router.push('/')} className="p-2 bg-stone-50 hover:bg-stone-100 rounded-xl transition-colors shrink-0">
-            <svg className="w-6 h-6 text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+      {/* 🌟 Premium Header */}
+      <div className="bg-white/80 backdrop-blur-xl border-b border-stone-200 sticky top-0 z-30 shadow-sm">
+        <div className="w-full max-w-[1200px] mx-auto px-6 py-4 flex items-center gap-4">
+          <button onClick={() => router.push('/')} className="w-10 h-10 bg-stone-50 border border-stone-200 hover:bg-stone-100 hover:border-stone-300 rounded-xl flex items-center justify-center text-stone-600 transition-all shrink-0">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
           </button>
           <div>
-            <h1 className="text-xl font-black text-stone-800">ระบบสำรองและกู้คืนข้อมูล (Full ERP Backup)</h1>
-            <p className="text-xs text-stone-500 mt-0.5">จัดการฐานข้อมูลทั้งหมดเพื่อป้องกันข้อมูลสูญหาย</p>
+            <h1 className="text-xl md:text-2xl font-black text-stone-900 tracking-tight">ระบบสำรองและกู้คืนข้อมูล (Backup)</h1>
+            <p className="text-xs md:text-sm font-medium text-stone-500 mt-0.5">จัดการฐานข้อมูลทั้งหมดเพื่อป้องกันข้อมูลสูญหาย</p>
           </div>
         </div>
       </div>
 
-      <div className="w-full max-w-[1000px] mx-auto px-4 sm:px-8 mt-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="w-full max-w-[1200px] mx-auto px-6 mt-8 space-y-8">
+        
+        {/* 🌟 2 Cards (สำรอง / กู้คืน) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           
-          {/* Card 1: สำรองข้อมูล */}
-          <div className="bg-white rounded-3xl border border-stone-200 shadow-sm p-8 flex flex-col items-center text-center gap-4">
-            <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-2">
+          <div className="bg-white rounded-[2rem] border border-stone-100 shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] transition-all p-8 md:p-10 flex flex-col items-center text-center group">
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-blue-600 text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform">
               <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4-4m0 0l-4-4m4 4V4" /></svg>
             </div>
-            <h2 className="text-xl font-black text-stone-800">สำรองข้อมูลทั้งหมด</h2>
-            <p className="text-sm text-stone-500 font-medium">ดึงข้อมูลครบทุกระบบ (บิลอ้อย, เช็คชื่อ, คลังสินค้า ฯลฯ) ออกมาเป็นไฟล์ .json</p>
+            <h2 className="text-2xl font-black text-stone-800 mb-2">สำรองข้อมูลทั้งหมด</h2>
+            <p className="text-sm text-stone-500 font-medium px-4 mb-8">ดึงข้อมูลครบทุกระบบที่เชื่อมต่อไว้ (Full ERP) ออกมาเป็นไฟล์ JSON เข้าคอมพิวเตอร์ของคุณ</p>
             
-            <div className="mt-auto pt-6 w-full">
+            <div className="mt-auto w-full max-w-sm">
               <button 
                 onClick={handleBackup} 
                 disabled={loading}
-                className="w-full py-4 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30 disabled:opacity-50"
+                className="w-full py-4 bg-blue-600 text-white text-[15px] font-black rounded-xl hover:bg-blue-500 transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)] hover:-translate-y-0.5 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
               >
-                {loading ? 'กำลังดึงข้อมูลทั้งระบบ...' : '⬇️ ดาวน์โหลดไฟล์ Backup'}
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="animate-spin w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                    กำลังดึงข้อมูล...
+                  </span>
+                ) : 'ดาวน์โหลดไฟล์ Backup'}
               </button>
             </div>
           </div>
 
-          {/* Card 2: กู้คืนข้อมูล */}
-          <div className="bg-white rounded-3xl border border-stone-200 shadow-sm p-8 flex flex-col items-center text-center gap-4">
-            <div className="w-20 h-20 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center mb-2">
+          <div className="bg-white rounded-[2rem] border border-stone-100 shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] transition-all p-8 md:p-10 flex flex-col items-center text-center group">
+            <div className="w-20 h-20 bg-gradient-to-br from-orange-400 to-red-500 text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-orange-500/30 group-hover:scale-110 transition-transform">
               <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
             </div>
-            <h2 className="text-xl font-black text-stone-800">กู้คืนระบบจากไฟล์</h2>
-            <p className="text-sm text-stone-500 font-medium">นำเข้าไฟล์ .json ระบบจะอัปเดตข้อมูลทับของเดิม <b>(ทำเฉพาะตอนระบบมีปัญหาเท่านั้น)</b></p>
+            <h2 className="text-2xl font-black text-stone-800 mb-2">กู้คืนระบบจากไฟล์</h2>
+            <p className="text-sm text-stone-500 font-medium px-4 mb-8">นำเข้าไฟล์ JSON เพื่อกู้คืนข้อมูลทับของเดิมทั้งหมด <span className="font-bold text-rose-500">(ทำเฉพาะตอนระบบมีปัญหาเท่านั้น)</span></p>
             
-            <div className="mt-auto pt-6 w-full">
-              <label className={`w-full py-4 bg-white border-2 border-orange-400 text-orange-600 font-black rounded-xl hover:bg-orange-50 cursor-pointer flex justify-center items-center transition-colors shadow-sm ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
-                {loading ? 'กำลังนำเข้าข้อมูล...' : '⬆️ เลือกไฟล์เพื่อกู้คืนระบบ'}
+            <div className="mt-auto w-full max-w-sm">
+              <label className={`w-full py-4 bg-white border-2 border-dashed border-orange-400 text-orange-600 text-[15px] font-black rounded-xl hover:bg-orange-50 cursor-pointer flex justify-center items-center transition-all shadow-sm hover:-translate-y-0.5 ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
+                {loading ? 'กำลังนำเข้าข้อมูล...' : 'อัปโหลดไฟล์เพื่อกู้คืนระบบ'}
                 <input 
                   type="file" 
                   accept=".json" 
@@ -254,61 +305,64 @@ export default function BackupRestorePage() {
         </div>
 
         {/* 🌟 Section 3: ประวัติการสำรองข้อมูลอัตโนมัติบน Cloud 🌟 */}
-        <div className="mt-10 bg-white rounded-3xl border border-stone-200 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-stone-100 bg-stone-50/50 flex justify-between items-center">
+        <div className="mt-10 bg-white rounded-[2rem] border border-stone-200 shadow-sm overflow-hidden">
+          <div className="p-6 md:px-8 md:py-6 border-b border-stone-100 bg-stone-50 flex justify-between items-center">
             <div>
-              <h2 className="text-lg font-black text-stone-800 flex items-center gap-2">
-                ☁️ ไฟล์สำรองข้อมูลทั้งระบบอัตโนมัติ (คลาวด์)
+              <h2 className="text-lg md:text-xl font-black text-stone-800 flex items-center gap-2">
+                ☁️ ข้อมูลสำรองบนคลาวด์อัตโนมัติ
               </h2>
-              <p className="text-xs text-stone-500 mt-1">ไฟล์ที่ระบบแอบสำรองข้อมูลให้ทุกๆ เที่ยงคืน (เก็บย้อนหลังสูงสุด 15 วัน)</p>
+              <p className="text-xs md:text-sm text-stone-500 font-medium mt-1">ไฟล์ที่ระบบบันทึกอัตโนมัติ (เก็บย้อนหลังสูงสุด 15 วัน)</p>
             </div>
-            <button onClick={fetchCloudBackups} className="p-2 text-stone-400 hover:text-stone-600 hover:bg-stone-200 rounded-lg transition-colors" title="รีเฟรชข้อมูล">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+            <button onClick={checkAndRunAutoBackup} disabled={syncing} className="p-2.5 text-stone-500 bg-white border border-stone-200 hover:text-orange-600 hover:border-orange-300 rounded-xl transition-all shadow-sm" title="เช็คสถานะและสำรองข้อมูลล่าสุด">
+              <svg className={`w-5 h-5 ${syncing ? 'animate-spin text-orange-500' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
             </button>
           </div>
           
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse min-w-[700px]">
               <thead className="bg-white">
-                <tr className="text-xs font-bold text-stone-400 border-b border-stone-100">
-                  <th className="py-4 px-6">ชื่อไฟล์ (File Name)</th>
-                  <th className="py-4 px-6">วันที่และเวลาที่สร้าง</th>
-                  <th className="py-4 px-6">ขนาดไฟล์</th>
-                  <th className="py-4 px-6 text-right">จัดการ</th>
+                <tr className="text-[12px] font-black text-stone-400 uppercase tracking-widest border-b border-stone-100">
+                  <th className="py-4 px-8">ชื่อไฟล์</th>
+                  <th className="py-4 px-6">วัน-เวลาที่บันทึก</th>
+                  <th className="py-4 px-6">ขนาด</th>
+                  <th className="py-4 px-8 text-right">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="text-sm font-medium text-stone-700 divide-y divide-stone-50">
-                {loadingFiles ? (
-                  <tr><td colSpan={4} className="py-8 text-center text-stone-400 font-bold">กำลังโหลดข้อมูลคลาวด์...</td></tr>
+                {loadingFiles || syncing ? (
+                  <tr><td colSpan={4} className="py-12 text-center text-stone-400 font-bold">กำลังอัปเดตและดึงข้อมูลคลาวด์...</td></tr>
                 ) : cloudFiles.length > 0 ? (
                   cloudFiles.map((file) => (
                     <tr key={file.id} className="hover:bg-stone-50/80 transition-colors">
-                      <td className="py-4 px-6 font-black text-stone-700 flex items-center gap-2">
-                        <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                      <td className="py-4 px-8 font-black text-stone-800 flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        </div>
                         {file.name}
                       </td>
+                      {/* 💡 แก้ไข TypeScript Error ตรงนี้: จัดการค่า null */}
                       <td className="py-4 px-6 text-stone-500 font-bold">
-                        {new Date(file.created_at).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' })}
+                        {file.created_at ? new Date(file.created_at).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' }) : '-'}
                       </td>
-                      <td className="py-4 px-6 text-stone-500">{formatBytes(file.metadata?.size || 0)}</td>
-                      <td className="py-4 px-6 text-right space-x-2">
+                      <td className="py-4 px-6 text-stone-500 font-bold">{formatBytes(file.metadata?.size || 0)}</td>
+                      <td className="py-4 px-8 text-right space-x-2">
                         <button 
                           onClick={() => downloadCloudFile(file.name)}
-                          className="px-3 py-1.5 bg-blue-50 text-blue-600 font-bold text-xs rounded-lg hover:bg-blue-100 transition-colors"
+                          className="px-4 py-2 bg-stone-100 text-stone-700 font-bold text-xs rounded-xl hover:bg-stone-200 transition-colors"
                         >
-                          ดาวน์โหลด
+                          โหลดเก็บไว้
                         </button>
                         <button 
                           onClick={() => deleteCloudFile(file.name)}
-                          className="px-3 py-1.5 bg-rose-50 text-rose-600 font-bold text-xs rounded-lg hover:bg-rose-100 transition-colors"
+                          className="px-4 py-2 bg-rose-50 text-rose-600 font-bold text-xs rounded-xl hover:bg-rose-100 transition-colors"
                         >
-                          ลบทิ้ง
+                          ลบ
                         </button>
                       </td>
                     </tr>
                   ))
                 ) : (
-                  <tr><td colSpan={4} className="py-8 text-center text-stone-400 font-bold">ยังไม่มีไฟล์สำรองข้อมูลอัตโนมัติบนระบบ</td></tr>
+                  <tr><td colSpan={4} className="py-12 text-center text-stone-400 font-bold">ยังไม่มีไฟล์สำรองข้อมูลอัตโนมัติบนระบบ</td></tr>
                 )}
               </tbody>
             </table>
@@ -320,29 +374,27 @@ export default function BackupRestorePage() {
       {/* 🌟 Notifications Modal 🌟 */}
       {notify.isOpen && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-stone-900/60 backdrop-blur-sm animate-in fade-in" onClick={notify.type !== 'confirm' ? closeNotify : undefined}></div>
-          <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl relative z-10 p-6 animate-in fade-in zoom-in-95 flex flex-col items-center text-center">
+          <div className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm animate-in fade-in transition-opacity" onClick={notify.type !== 'confirm' ? closeNotify : undefined}></div>
+          <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl relative z-10 p-8 animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
             
-            {/* Icon เปลี่ยนตามสถานะ */}
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
-              notify.type === 'success' ? 'bg-emerald-100 text-emerald-600' :
-              notify.type === 'error' ? 'bg-rose-100 text-rose-600' : 
-              notify.type === 'confirm' ? 'bg-orange-100 text-orange-600' : 'bg-amber-100 text-amber-600'
+            <div className={`w-20 h-20 rounded-[1.5rem] flex items-center justify-center mb-5 ${
+              notify.type === 'success' ? 'bg-emerald-50 text-emerald-500 border border-emerald-100' :
+              notify.type === 'error' ? 'bg-rose-50 text-rose-500 border border-rose-100' : 
+              notify.type === 'confirm' ? 'bg-orange-50 text-orange-500 border border-orange-100' : 'bg-amber-50 text-amber-500 border border-amber-100'
             }`}>
-              {notify.type === 'success' && <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>}
-              {notify.type === 'error' && <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>}
-              {(notify.type === 'warning' || notify.type === 'confirm') && <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>}
+              {notify.type === 'success' && <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>}
+              {notify.type === 'error' && <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>}
+              {(notify.type === 'warning' || notify.type === 'confirm') && <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>}
             </div>
 
-            <h3 className="text-xl font-black text-stone-800 mb-2">{notify.title}</h3>
-            <p className="text-sm text-stone-500 font-medium mb-6 whitespace-pre-line">{notify.message}</p>
+            <h3 className="text-xl font-black text-stone-900 mb-2">{notify.title}</h3>
+            <p className="text-[13px] text-stone-500 font-medium mb-8 whitespace-pre-line leading-relaxed">{notify.message}</p>
 
-            {/* 🌟 ถ้าเป็น Modal แบบ Confirm จะมี 2 ปุ่ม (ยกเลิก / ยืนยัน) 🌟 */}
             {notify.type === 'confirm' ? (
               <div className="flex w-full gap-3">
                 <button 
                   onClick={closeNotify} 
-                  className="w-1/2 py-3 rounded-xl font-bold text-stone-600 bg-stone-100 hover:bg-stone-200 transition-colors"
+                  className="w-1/2 py-3.5 rounded-xl font-bold text-stone-600 bg-stone-100 hover:bg-stone-200 transition-colors"
                 >
                   ยกเลิก
                 </button>
@@ -351,21 +403,20 @@ export default function BackupRestorePage() {
                     closeNotify(); 
                     if (notify.onConfirm) notify.onConfirm(); 
                   }} 
-                  className="w-1/2 py-3 rounded-xl font-bold text-white bg-rose-600 hover:bg-rose-700 transition-colors shadow-md shadow-rose-500/30"
+                  className="w-1/2 py-3.5 rounded-xl font-bold text-white bg-rose-600 hover:bg-rose-500 transition-colors shadow-lg shadow-rose-500/30"
                 >
-                  ยืนยัน
+                  ยืนยันดำเนินการ
                 </button>
               </div>
             ) : (
-              /* ถ้าไม่ใช่ Confirm ก็มีปุ่มเดียว */
               <button 
                 onClick={closeNotify} 
-                className={`w-full py-3 rounded-xl font-bold text-white shadow-md transition-colors ${
-                  notify.type === 'success' ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/30' :
-                  notify.type === 'error' ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-500/30' : 'bg-amber-500 hover:bg-amber-600'
+                className={`w-full py-3.5 rounded-xl font-bold text-white shadow-lg transition-colors ${
+                  notify.type === 'success' ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/30' :
+                  notify.type === 'error' ? 'bg-rose-600 hover:bg-rose-500 shadow-rose-500/30' : 'bg-amber-500 hover:bg-amber-400 shadow-amber-500/30'
                 }`}
               >
-                ตกลง
+                รับทราบ
               </button>
             )}
           </div>

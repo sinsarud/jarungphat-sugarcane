@@ -179,148 +179,171 @@ export default function EmployeesPage() {
     (emp.position && emp.position.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  if (loading) return <div className="min-h-screen bg-[#FCFBF7] flex items-center justify-center"><div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>;
+  if (loading) return <div className="min-h-screen bg-[#F1F5F9] flex items-center justify-center"><div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>;
 
   return (
-    <div className="min-h-screen bg-[#FCFBF7] pb-24 font-sans relative">
+    <div className="min-h-screen bg-[#F1F5F9] pb-24 font-sans relative selection:bg-blue-500 selection:text-white">
       
-      {/* 🌟 อัปเกรด Header Bar (Responsive) 🌟 */}
-      <div className="bg-white border-b border-stone-200 sticky top-0 z-30 shadow-sm">
-        <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-8 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-          <div className="flex items-center space-x-3 sm:space-x-4">
-            <button onClick={() => router.push('/')} className="p-2 bg-stone-50 hover:bg-stone-100 rounded-xl transition-colors shrink-0">
-              <svg className="w-6 h-6 text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+      {/* 🌟 Premium Header Bar */}
+      <div className="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            {/* ⬅️ ปุ่มย้อนกลับดีไซน์ใหม่ */}
+            <button onClick={() => router.push('/')} className="group w-10 h-10 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 rounded-xl flex items-center justify-center transition-all shrink-0 shadow-sm">
+              <svg className="w-5 h-5 text-slate-400 group-hover:text-blue-600 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
             </button>
-            <div>
-              <h1 className="text-lg sm:text-xl font-bold text-stone-800 leading-tight">ฐานข้อมูลพนักงาน</h1>
-              <p className="text-[10px] sm:text-xs text-stone-500 mt-0.5">จัดการรายชื่อและข้อมูลติดต่อ</p>
+            
+            <div className="h-8 w-px bg-slate-200 hidden sm:block mx-1"></div>
+            
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-xl flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+              </div>
+              <div className="flex flex-col justify-center">
+                <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none mb-1">ฐานข้อมูลพนักงาน</h1>
+                <p className="text-[11px] font-bold text-slate-500 leading-none hidden sm:block uppercase tracking-wider">
+                  จัดการรายชื่อและข้อมูลติดต่อ
+                </p>
+              </div>
             </div>
           </div>
+          
           <button 
             onClick={openAddModal} 
-            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 sm:py-2.5 rounded-xl text-sm font-bold shadow-md shadow-blue-600/20 flex items-center justify-center transition-all active:scale-95"
+            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white px-6 py-3 sm:py-2.5 rounded-xl text-sm font-black shadow-lg shadow-blue-600/30 flex items-center justify-center transition-all"
           >
-            <svg className="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
-            <span>เพิ่มคนงานใหม่</span>
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" /></svg>
+            <span>เพิ่มพนักงานใหม่</span>
           </button>
         </div>
       </div>
 
-      <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-8 mt-6 sm:mt-8">
+      <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 mt-8">
         
-        {/* ช่องค้นหา */}
-        <div className="bg-white p-3 sm:p-5 rounded-2xl sm:rounded-[2rem] border border-stone-200 shadow-sm mb-6 flex items-center">
-          <div className="relative w-full max-w-md">
+        {/* 🌟 ช่องค้นหา (Search Box High Contrast) */}
+        <div className="bg-white p-5 rounded-[24px] border border-slate-200 shadow-sm mb-6 flex items-center">
+          <div className="relative w-full max-w-lg">
             <span className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <svg className="h-5 w-5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              <svg className="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             </span>
             <input
               type="text"
-              placeholder="ค้นหาชื่อ หรือ ตำแหน่ง..."
+              placeholder="ค้นหาชื่อ, รหัส, หรือตำแหน่งพนักงาน..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm font-semibold"
+              className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-sm font-bold shadow-sm"
             />
           </div>
         </div>
 
         {/* ======================================================= */}
-        {/* 📱 MOBILE VIEW: แสดงแบบการ์ดพนักงาน (ซ่อนบนจอใหญ่) 📱 */}
+        {/* 📱 MOBILE VIEW: แสดงแบบการ์ดพนักงาน (ซ่อนบนจอใหญ่) */}
         {/* ======================================================= */}
         <div className="block md:hidden space-y-4">
           {filteredEmployees.length > 0 ? filteredEmployees.map((emp) => (
-            <div key={`mob-${emp.id}`} className={`bg-white p-4 rounded-2xl border border-stone-200 shadow-sm relative transition-all ${emp.status === 'inactive' ? 'opacity-60 bg-stone-50/50' : ''}`}>
+            <div key={`mob-${emp.id}`} className={`bg-white p-5 rounded-[20px] border border-slate-200 shadow-sm relative transition-all ${emp.status === 'inactive' ? 'opacity-60 bg-slate-50/50' : ''}`}>
               
-              <div className="flex justify-between items-start mb-3 border-b border-stone-100 pb-3">
+              <div className="flex justify-between items-start mb-4 border-b border-slate-100 pb-4">
                 <div className="pr-2">
-                  <div className="text-xs font-bold text-blue-500 mb-0.5">{emp.emp_code}</div>
-                  <div className="font-black text-stone-800 text-lg leading-tight">{emp.full_name}</div>
+                  <div className="text-[11px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded inline-block mb-1.5 border border-blue-100">{emp.emp_code}</div>
+                  <div className="font-black text-slate-900 text-lg leading-tight">{emp.full_name}</div>
                 </div>
                 <div>
                   {emp.status === 'active' 
-                    ? <span className="px-2.5 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-md text-[10px] font-black whitespace-nowrap">ทำงานอยู่</span>
-                    : <span className="px-2.5 py-1 bg-stone-100 border border-stone-200 text-stone-500 rounded-md text-[10px] font-black whitespace-nowrap">ออก/พักงาน</span>
+                    ? <span className="px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-md text-[10px] font-black whitespace-nowrap shadow-sm">ทำงานอยู่</span>
+                    : <span className="px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-500 rounded-md text-[10px] font-black whitespace-nowrap shadow-sm">ออก/พักงาน</span>
                   }
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 mb-4">
+              <div className="grid grid-cols-2 gap-3 mb-5">
                 <div>
-                  <p className="text-[10px] text-stone-400 font-bold uppercase">ตำแหน่ง</p>
-                  <p className="text-sm font-bold text-stone-700 truncate">{emp.position || '-'}</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">ตำแหน่ง</p>
+                  <p className="text-[13px] font-bold text-slate-800 truncate">{emp.position || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-stone-400 font-bold uppercase">เบอร์ติดต่อ</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">เบอร์ติดต่อ</p>
                   {emp.phone ? (
-                    <a href={`tel:${emp.phone}`} className="text-sm font-bold text-blue-600 flex items-center gap-1">
+                    <a href={`tel:${emp.phone}`} className="text-[13px] font-bold text-blue-600 flex items-center gap-1.5">
                       📞 {emp.phone}
                     </a>
                   ) : (
-                    <p className="text-sm font-bold text-stone-400">-</p>
+                    <p className="text-[13px] font-bold text-slate-400">-</p>
                   )}
                 </div>
               </div>
 
-              <div className="flex gap-2 pt-3 border-t border-stone-50">
-                <button onClick={() => openEditModal(emp)} className="flex-1 py-2.5 bg-blue-50 text-blue-600 font-bold rounded-xl text-xs hover:bg-blue-100 transition-colors">
-                  ⚙️ แก้ไข
+              <div className="flex gap-3 pt-4 border-t border-slate-100">
+                <button onClick={() => openEditModal(emp)} className="flex-1 py-3 bg-white border border-blue-200 text-blue-600 font-black rounded-xl text-xs hover:bg-blue-50 transition-colors shadow-sm">
+                  แก้ไขข้อมูล
                 </button>
-                <button onClick={() => setShowDeleteModal({ show: true, id: emp.id, name: emp.full_name })} className="flex-1 py-2.5 bg-red-50 text-red-600 font-bold rounded-xl text-xs hover:bg-red-100 transition-colors">
-                  🗑️ ลบ
+                <button onClick={() => setShowDeleteModal({ show: true, id: emp.id, name: emp.full_name })} className="flex-1 py-3 bg-white border border-rose-200 text-rose-600 font-black rounded-xl text-xs hover:bg-rose-50 transition-colors shadow-sm">
+                  ลบรายชื่อ
                 </button>
               </div>
             </div>
           )) : (
-            <div className="text-center py-12 bg-white rounded-2xl border-2 border-stone-200 border-dashed">
-              <p className="text-stone-400 font-bold text-sm">ไม่พบรายชื่อพนักงาน</p>
+            <div className="text-center py-16 bg-white rounded-[24px] border border-slate-200 shadow-sm">
+              <div className="w-12 h-12 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-sm">
+                <svg className="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" /></svg>
+              </div>
+              <p className="text-slate-400 font-bold text-xs">ไม่พบรายชื่อพนักงาน</p>
             </div>
           )}
         </div>
 
         {/* ======================================================= */}
-        {/* 💻 DESKTOP VIEW: แสดงแบบตาราง (ซ่อนบนมือถือ) 💻 */}
+        {/* 💻 DESKTOP VIEW: แสดงแบบตาราง (หัวตารางสีสว่าง คลีน) */}
         {/* ======================================================= */}
-        <div className="hidden md:block bg-white rounded-[2rem] border border-stone-200 shadow-sm overflow-hidden">
+        <div className="hidden md:block bg-white rounded-[24px] border border-slate-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[800px]">
-              <thead>
-                <tr className="bg-stone-50 border-b border-stone-200 text-xs font-bold text-stone-500 uppercase tracking-wider">
-                  <th className="py-4 px-6">รหัส</th>
-                  <th className="py-4 px-6">ชื่อ-นามสกุล</th>
-                  <th className="py-4 px-6">ตำแหน่ง / หน้าที่</th>
-                  <th className="py-4 px-6">เบอร์ติดต่อ</th>
-                  <th className="py-4 px-6 text-center">สถานะ</th>
+              <thead className="bg-slate-50">
+                <tr className="border-b-2 border-slate-200 text-[12px] font-black text-slate-500 uppercase tracking-widest">
+                  <th className="py-4 px-6 border-r border-slate-200">รหัส</th>
+                  <th className="py-4 px-6 border-r border-slate-200">ชื่อ-นามสกุล</th>
+                  <th className="py-4 px-6 border-r border-slate-200">ตำแหน่ง / หน้าที่</th>
+                  <th className="py-4 px-6 border-r border-slate-200">เบอร์ติดต่อ</th>
+                  <th className="py-4 px-6 text-center border-r border-slate-200">สถานะ</th>
                   <th className="py-4 px-6 text-center">จัดการ</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-stone-100 text-sm font-medium text-stone-700">
+              <tbody className="divide-y divide-slate-100 text-sm">
                 {filteredEmployees.length > 0 ? filteredEmployees.map((emp) => (
-                  <tr key={emp.id} className={`hover:bg-stone-50/50 transition-colors ${emp.status === 'inactive' ? 'opacity-60' : ''}`}>
-                    <td className="py-4 px-6 font-bold text-stone-500">{emp.emp_code}</td>
-                    <td className="py-4 px-6 font-black text-stone-800">{emp.full_name}</td>
-                    <td className="py-4 px-6 text-stone-600">
-                      <span className="px-3 py-1 bg-stone-100 text-stone-700 rounded-md font-bold text-xs">{emp.position || '-'}</span>
+                  <tr key={emp.id} className={`hover:bg-blue-50/40 transition-colors even:bg-slate-50/50 ${emp.status === 'inactive' ? 'opacity-60' : ''}`}>
+                    <td className="py-4 px-6 font-black text-blue-600 border-r border-slate-100">{emp.emp_code}</td>
+                    <td className="py-4 px-6 font-black text-slate-900 border-r border-slate-100 text-[15px]">{emp.full_name}</td>
+                    <td className="py-4 px-6 text-slate-700 border-r border-slate-100">
+                      <span className="px-3 py-1 bg-white border border-slate-200 text-slate-700 rounded-md font-bold text-[11px] shadow-sm">{emp.position || '-'}</span>
                     </td>
-                    <td className="py-4 px-6 text-stone-500">{emp.phone || '-'}</td>
-                    <td className="py-4 px-6 text-center">
+                    <td className="py-4 px-6 text-slate-600 font-bold border-r border-slate-100">{emp.phone || '-'}</td>
+                    <td className="py-4 px-6 text-center border-r border-slate-100">
                       {emp.status === 'active' 
-                        ? <span className="px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-full text-xs font-bold">ทำงานอยู่</span>
-                        : <span className="px-3 py-1 bg-stone-100 border border-stone-200 text-stone-500 rounded-full text-xs font-bold">ออก/พักงาน</span>
+                        ? <span className="px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-full text-[11px] font-black shadow-sm">ทำงานอยู่</span>
+                        : <span className="px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-500 rounded-full text-[11px] font-black shadow-sm">ออก/พักงาน</span>
                       }
                     </td>
                     <td className="py-4 px-6 text-center">
                       <div className="flex items-center justify-center gap-2">
-                        <button onClick={() => openEditModal(emp)} className="text-xs font-bold text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 transition-colors">
+                        <button onClick={() => openEditModal(emp)} className="text-xs font-bold text-blue-600 hover:text-white bg-white hover:bg-blue-500 px-3 py-2 rounded-lg border border-blue-200 transition-colors shadow-sm">
                           แก้ไข
                         </button>
-                        <button onClick={() => setShowDeleteModal({ show: true, id: emp.id, name: emp.full_name })} className="text-xs font-bold text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg border border-red-200 transition-colors">
+                        <button onClick={() => setShowDeleteModal({ show: true, id: emp.id, name: emp.full_name })} className="text-xs font-bold text-rose-600 hover:text-white bg-white hover:bg-rose-500 px-3 py-2 rounded-lg border border-rose-200 transition-colors shadow-sm">
                           ลบ
                         </button>
                       </div>
                     </td>
                   </tr>
                 )) : (
-                  <tr><td colSpan={6} className="py-12 text-center text-stone-400 font-bold">ไม่พบรายชื่อพนักงาน</td></tr>
+                  <tr>
+                    <td colSpan={6} className="py-20 text-center bg-slate-50">
+                      <div className="w-12 h-12 bg-white border border-slate-200 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-sm">
+                        <svg className="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" /></svg>
+                      </div>
+                      <p className="text-slate-400 font-bold text-sm">ไม่พบรายชื่อพนักงาน</p>
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>
@@ -330,50 +353,55 @@ export default function EmployeesPage() {
       </div>
 
       {/* ======================================================= */}
-      {/* 🌟 MODAL 1: เพิ่ม/แก้ไข ข้อมูลพนักงาน (Responsive) 🌟 */}
+      {/* 🌟 MODAL 1: เพิ่ม/แก้ไข ข้อมูลพนักงาน (Premium UI) 🌟 */}
       {/* ======================================================= */}
       {showModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-stone-900/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setShowModal(false)}></div>
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setShowModal(false)}></div>
           
-          <div className="bg-white w-full max-w-md rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl relative z-10 animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-5 sm:mb-6">
-              <h3 className="text-lg sm:text-xl font-black text-stone-800 flex items-center gap-2">
-                <span>👷‍♂️</span> {editingEmp ? 'แก้ไขข้อมูลพนักงาน' : 'เพิ่มพนักงานใหม่'}
+          <div className="bg-white w-full max-w-lg rounded-[24px] shadow-2xl relative z-10 animate-in fade-in zoom-in-95 duration-200 overflow-hidden flex flex-col max-h-[95vh] border border-slate-200">
+            {/* แถบสีตกแต่งด้านบน */}
+            <div className="h-1.5 w-full bg-gradient-to-r from-blue-500 to-indigo-600 shrink-0"></div>
+            
+            <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-white shrink-0">
+              <h3 className="text-lg font-black text-slate-900 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shadow-inner">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                </div>
+                {editingEmp ? 'แก้ไขข้อมูลพนักงาน' : 'เพิ่มพนักงานใหม่'}
               </h3>
-              <button onClick={() => setShowModal(false)} className="text-stone-400 hover:text-stone-600 bg-stone-100 w-8 h-8 rounded-full flex items-center justify-center font-bold">✕</button>
+              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 w-8 h-8 rounded-full flex items-center justify-center font-bold transition-colors">✕</button>
             </div>
 
-            <div className="space-y-4">
+            <div className="p-6 overflow-y-auto custom-scrollbar bg-white space-y-5">
               
-              {/* เปลี่ยนจาก Grid-cols-2 เป็นแนวดิ่งบนมือถือ */}
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-5">
                 <div className="w-full sm:w-1/2">
-                  <label className="text-xs font-bold text-stone-500 uppercase mb-1.5 block">รหัสพนักงาน</label>
-                  <input type="text" value={formCode} onChange={(e) => setFormCode(e.target.value)} placeholder="EMP-001" className="w-full px-4 py-2.5 sm:py-3 bg-stone-50 border border-stone-200 rounded-xl font-bold text-stone-800 outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider mb-2 block ml-1">รหัสพนักงาน</label>
+                  <input type="text" value={formCode} onChange={(e) => setFormCode(e.target.value)} placeholder="EMP-001" className="w-full px-4 py-3.5 bg-slate-50 border border-slate-300 rounded-xl font-black text-blue-700 outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm shadow-sm transition-all uppercase" />
                 </div>
                 <div className="w-full sm:w-1/2">
-                  <label className="text-xs font-bold text-stone-500 uppercase mb-1.5 block">สถานะ</label>
-                  <select value={formStatus} onChange={(e: any) => setFormStatus(e.target.value)} className="w-full px-3 py-2.5 sm:py-3 bg-stone-50 border border-stone-200 rounded-xl text-stone-800 font-bold outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-                    <option value="active">🟢 ทำงานอยู่</option>
-                    <option value="inactive">⚪ ออก/พักงาน</option>
+                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider mb-2 block ml-1">สถานะ</label>
+                  <select value={formStatus} onChange={(e: any) => setFormStatus(e.target.value)} className="w-full px-4 py-3.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-bold outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm shadow-sm transition-all appearance-none cursor-pointer">
+                    <option value="active">🟢 กำลังทำงานอยู่</option>
+                    <option value="inactive">⚪ ออก / พักงาน</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-stone-500 uppercase mb-1.5 block">ชื่อ-นามสกุล</label>
-                <input type="text" value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="เช่น สมหมาย ใจดี" className="w-full px-4 py-2.5 sm:py-3 bg-stone-50 border border-stone-200 rounded-xl font-bold text-stone-800 outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider mb-2 block ml-1">ชื่อ-นามสกุล</label>
+                <input type="text" value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="เช่น สมหมาย ใจดี" className="w-full px-4 py-3.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm shadow-sm transition-all" />
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-5">
                 <div className="w-full sm:w-1/2">
-                  <label className="text-xs font-bold text-stone-500 uppercase mb-1.5 block">ตำแหน่ง / หน้าที่</label>
+                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider mb-2 block ml-1">ตำแหน่ง / หน้าที่</label>
                   <div className="flex gap-2">
                     <select 
                       value={formPosition} 
                       onChange={(e) => setFormPosition(e.target.value)} 
-                      className="flex-1 px-3 py-2.5 sm:py-3 bg-stone-50 border border-stone-200 rounded-xl text-stone-800 font-bold outline-none focus:ring-2 focus:ring-blue-500 text-xs sm:text-sm truncate"
+                      className="flex-1 px-4 py-3.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-bold outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm shadow-sm transition-all appearance-none cursor-pointer truncate"
                     >
                       {positions.map(p => <option key={p} value={p}>{p}</option>)}
                     </select>
@@ -381,7 +409,7 @@ export default function EmployeesPage() {
                       type="button" 
                       onClick={() => setPromptDialog({ show: true, value: '' })} 
                       title="เพิ่มตำแหน่งใหม่" 
-                      className="bg-blue-100 text-blue-700 px-3.5 rounded-xl font-black text-xl hover:bg-blue-200 transition-colors shrink-0"
+                      className="bg-white border border-blue-200 text-blue-600 px-4 rounded-xl font-black text-lg hover:bg-blue-50 hover:border-blue-300 transition-colors shrink-0 shadow-sm"
                     >
                       +
                     </button>
@@ -389,85 +417,121 @@ export default function EmployeesPage() {
                 </div>
 
                 <div className="w-full sm:w-1/2">
-                  <label className="text-xs font-bold text-stone-500 uppercase mb-1.5 block">เบอร์ติดต่อ</label>
-                  <input type="tel" value={formPhone} onChange={(e) => setFormPhone(e.target.value)} placeholder="08x-xxx-xxxx" className="w-full px-4 py-2.5 sm:py-3 bg-stone-50 border border-stone-200 rounded-xl font-bold text-stone-800 outline-none text-sm focus:ring-2 focus:ring-blue-500" />
+                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider mb-2 block ml-1">เบอร์ติดต่อ (ไม่บังคับ)</label>
+                  <input type="tel" value={formPhone} onChange={(e) => setFormPhone(e.target.value)} placeholder="08x-xxx-xxxx" className="w-full px-4 py-3.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm shadow-sm transition-all" />
                 </div>
               </div>
+
             </div>
 
-            <button onClick={handleSave} disabled={saving} className={`w-full mt-6 sm:mt-8 py-3.5 sm:py-4 rounded-xl font-black text-white text-base sm:text-lg shadow-lg transition-all ${saving ? 'bg-stone-300' : 'bg-blue-600 hover:bg-blue-700 active:scale-95 shadow-blue-600/20'}`}>
-              {saving ? 'กำลังบันทึก...' : '💾 ยืนยันบันทึกข้อมูล'}
-            </button>
+            <div className="px-6 py-5 border-t border-slate-100 bg-slate-50 flex gap-3 sm:gap-4 shrink-0 rounded-b-[24px]">
+              <button onClick={() => setShowModal(false)} className="flex-1 py-3.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-600 font-bold rounded-xl text-sm sm:text-[15px] transition-colors shadow-sm">
+                ยกเลิก
+              </button>
+              <button onClick={handleSave} disabled={saving} className={`flex-[2] py-3.5 rounded-xl font-black text-white text-sm sm:text-[15px] shadow-lg transition-all border flex items-center justify-center gap-2 ${saving ? 'bg-slate-400 border-slate-400 shadow-none cursor-not-allowed' : 'bg-blue-600 border-blue-700 hover:bg-blue-700 active:scale-[0.98] shadow-blue-600/30'}`}>
+                {saving ? (
+                  <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> กำลังบันทึก...</>
+                ) : '💾 ยืนยันบันทึกข้อมูล'}
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* ======================================================= */}
-      {/* 🌟 CUSTOM PROMPT MODAL: เพิ่มตำแหน่ง/หน้าที่ใหม่ 🌟 */}
+      {/* 🌟 MODAL 2: CUSTOM PROMPT เพิ่มตำแหน่งใหม่ (z-[120]) 🌟 */}
       {/* ======================================================= */}
       {promptDialog.show && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-stone-900/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setPromptDialog({ show: false, value: '' })}></div>
-          <div className="bg-white w-full max-w-sm rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl relative z-10 animate-in fade-in zoom-in-95 duration-200">
-            <h3 className="text-lg sm:text-xl font-black text-stone-800 mb-2">➕ เพิ่มตำแหน่ง / หน้าที่</h3>
-            <p className="text-xs sm:text-sm text-stone-500 mb-5">พิมพ์ตำแหน่งงานใหม่ที่ต้องการเพิ่มลงในระบบ</p>
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setPromptDialog({ show: false, value: '' })}></div>
+          <div className="bg-white w-full max-w-sm rounded-[24px] p-6 sm:p-8 shadow-2xl relative z-10 animate-in fade-in zoom-in-95 duration-200 border border-slate-200">
+            <h3 className="text-lg font-black text-slate-900 mb-2 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-blue-500 inline-block"></span>
+              เพิ่มตำแหน่ง / หน้าที่
+            </h3>
+            <p className="text-[12px] font-bold text-slate-500 mb-6">พิมพ์ชื่อตำแหน่งงานใหม่ที่ต้องการเพิ่มลงในระบบ</p>
             <input 
               type="text" 
               autoFocus
               value={promptDialog.value} 
               onChange={(e) => setPromptDialog({ ...promptDialog, value: e.target.value })} 
-              className="w-full px-4 py-2.5 sm:py-3 bg-stone-50 border border-stone-200 rounded-xl text-stone-800 font-bold focus:ring-2 focus:ring-blue-500 outline-none mb-5 sm:mb-6 text-sm"
+              className="w-full px-4 py-3.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-bold focus:bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none mb-6 text-sm shadow-sm transition-all"
               placeholder="เช่น เสมียน, หัวหน้างาน..."
             />
             <div className="flex gap-3">
-              <button onClick={() => setPromptDialog({ show: false, value: '' })} className="flex-1 py-2.5 sm:py-3 bg-stone-100 hover:bg-stone-200 text-stone-600 font-bold rounded-xl transition-colors text-sm">ยกเลิก</button>
-              <button onClick={executeAddPosition} className="flex-1 py-2.5 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors shadow-md shadow-blue-500/20 text-sm">บันทึกตำแหน่ง</button>
+              <button onClick={() => setPromptDialog({ show: false, value: '' })} className="flex-1 py-3 bg-white border border-slate-300 hover:bg-slate-100 text-slate-600 font-bold rounded-xl transition-colors text-[13px] shadow-sm">ยกเลิก</button>
+              <button onClick={executeAddPosition} className="flex-[1.5] py-3 bg-blue-600 border border-blue-700 hover:bg-blue-700 text-white font-black rounded-xl transition-all shadow-md shadow-blue-500/30 active:scale-[0.98] text-[13px]">บันทึกตำแหน่ง</button>
             </div>
           </div>
         </div>
       )}
 
       {/* ======================================================= */}
-      {/* 🌟 MODAL 2: ป๊อปอัปยืนยันการลบข้อมูลพนักงาน (ลบถาวร) 🌟 */}
+      {/* 🌟 MODAL 3: ป๊อปอัปยืนยันการลบข้อมูล (z-[140]) 🌟 */}
       {/* ======================================================= */}
       {showDeleteModal.show && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-stone-900/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setShowDeleteModal({ show: false, id: '', name: '' })}></div>
-          <div className="bg-white w-full max-w-sm rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl relative z-10 text-center animate-in fade-in zoom-in-95 duration-200">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-7 h-7 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+        <div className="fixed inset-0 z-[140] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setShowDeleteModal({ show: false, id: '', name: '' })}></div>
+          <div className="bg-white w-full max-w-sm rounded-[24px] p-6 sm:p-8 shadow-2xl relative z-10 text-center animate-in fade-in zoom-in-95 duration-200 border border-slate-200">
+            <div className="w-16 h-16 bg-rose-50 border border-rose-200 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-5">
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
             </div>
-            <h3 className="text-lg sm:text-xl font-black text-stone-800 mb-2">ยืนยันการลบข้อมูล</h3>
-            <p className="text-xs sm:text-sm text-stone-500 mb-6">ต้องการลบรายชื่อ <strong className="text-stone-800">{showDeleteModal.name}</strong> ออกจากระบบฐานข้อมูลใช่หรือไม่?</p>
+            <h3 className="text-xl font-black text-slate-900 mb-2">ยืนยันการลบข้อมูล</h3>
+            <p className="text-[13px] font-bold text-slate-500 mb-8 px-2 leading-relaxed">
+              ต้องการลบรายชื่อ <strong className="text-slate-900">{showDeleteModal.name}</strong> ออกจากระบบฐานข้อมูลใช่หรือไม่?
+            </p>
             <div className="flex gap-3">
-              <button onClick={() => setShowDeleteModal({ show: false, id: '', name: '' })} className="flex-1 py-2.5 sm:py-3 bg-stone-100 text-stone-600 font-bold rounded-xl hover:bg-stone-200 transition-colors text-sm">ยกเลิก</button>
-              <button onClick={executeDelete} disabled={saving} className="flex-1 py-2.5 sm:py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 shadow-md transition-colors text-sm">ลบถาวร</button>
+              <button onClick={() => setShowDeleteModal({ show: false, id: '', name: '' })} className="flex-1 py-3 bg-white border border-slate-300 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-colors text-[13px] shadow-sm">ยกเลิก</button>
+              <button onClick={executeDelete} disabled={saving} className="flex-1 py-3 bg-rose-600 border border-rose-700 text-white font-black rounded-xl hover:bg-rose-700 shadow-md shadow-rose-500/30 active:scale-[0.98] transition-all text-[13px]">
+                {saving ? 'กำลังลบ...' : 'ลบถาวร'}
+              </button>
             </div>
           </div>
         </div>
       )}
 
       {/* ======================================================= */}
-      {/* 🌟 POPUP แจ้งเตือนสถานะความสำเร็จ / ขัดข้อง 🌟 */}
+      {/* 🌟 POPUP แจ้งเตือนสถานะความสำเร็จ / ขัดข้อง (z-[150]) 🌟 */}
       {/* ======================================================= */}
       {popup.show && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-stone-900/40 backdrop-blur-xs animate-in fade-in" onClick={() => setPopup({ show: false, type: '', message: '' })}></div>
-          <div className="bg-white w-full max-w-sm rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl relative z-10 text-center animate-in fade-in zoom-in-95 duration-200 border border-stone-100">
-            {popup.type === 'success' ? (
-              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4"><svg className="w-7 h-7 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg></div>
-            ) : (
-              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4"><svg className="w-7 h-7 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg></div>
-            )}
-            <h3 className="text-base sm:text-lg font-black text-stone-800 mb-2">{popup.type === 'success' ? 'สำเร็จ!' : 'เกิดข้อผิดพลาด'}</h3>
-            <p className="text-xs sm:text-sm text-stone-500 mb-6 leading-relaxed">{popup.message}</p>
-            <button onClick={() => setPopup({ show: false, type: '', message: '' })} className={`w-full py-2.5 sm:py-3 font-bold rounded-xl text-white shadow-md text-sm ${popup.type === 'success' ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-red-500 hover:bg-red-600'}`}>
-              ตกลง
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setPopup({ show: false, type: '', message: '' })}></div>
+          <div className="bg-white w-full max-w-sm rounded-[24px] p-8 shadow-2xl relative z-10 text-center animate-in fade-in zoom-in-95 duration-200 border border-slate-200">
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5 border ${
+              popup.type === 'success' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-rose-50 text-rose-600 border-rose-200'
+            }`}>
+              {popup.type === 'success' ? (
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
+              ) : (
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+              )}
+            </div>
+            <h3 className="text-xl font-black text-slate-900 mb-2">{popup.type === 'success' ? 'สำเร็จ!' : 'เกิดข้อผิดพลาด'}</h3>
+            <p className="text-[13px] font-bold text-slate-500 mb-8 leading-relaxed px-2">{popup.message}</p>
+            <button onClick={() => setPopup({ show: false, type: '', message: '' })} className={`w-full py-3.5 font-black rounded-xl text-white shadow-md text-[13px] border transition-colors active:scale-[0.98] ${
+              popup.type === 'success' ? 'bg-emerald-600 border-emerald-700 hover:bg-emerald-700 shadow-emerald-600/30' : 'bg-rose-600 border-rose-700 hover:bg-rose-700 shadow-rose-600/30'
+            }`}>
+              ตกลงรับทราบ
             </button>
           </div>
         </div>
       )}
 
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
+      `}</style>
     </div>
   );
 }
