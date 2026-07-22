@@ -60,7 +60,7 @@ export default function AttendancePage() {
         attData.forEach(r => {
           attMap[r.employee_id] = {
             work_type: r.work_type || '',
-            wage: r.wage ? String(r.wage) : '',
+            wage: r.wage !== null && r.wage !== undefined && r.wage !== 0 ? String(r.wage) : '',
             note: r.note || ''
           };
         });
@@ -83,17 +83,28 @@ export default function AttendancePage() {
     checkAuth();
   }, [router, selectedDate]);
 
+  // 🌟 ปลดล็อก Auto-Wage ปล่อยให้พิมพ์เงินเองตามความเป็นจริง
   const handleToggleWorkType = (empId: string, type: string) => {
     setAttendances(prev => {
       const currentType = prev[empId]?.work_type || '';
       const nextType = currentType === type ? '' : type;
+
+      // เก็บค่าแรงที่พิมพ์ไว้เดิม หรือให้เป็นค่าว่างถ้ายังไม่ได้พิมพ์
+      let currentWage = prev[empId]?.wage || '';
+      
+      // ถ้ากด ขาด/ลา ถึงจะเคลียร์ช่องเงินให้เป็นว่าง
+      if (['ขาด', 'ลา', ''].includes(nextType)) {
+        currentWage = '';
+      }
 
       return {
         ...prev,
         [empId]: {
           ...(prev[empId] || { work_type: '', wage: '', note: '' }),
           work_type: nextType,
-          wage: (['ขาด', 'ลา', ''].includes(nextType)) ? '' : (prev[empId]?.wage || '')
+          wage: currentWage,
+          // เคลียร์หมายเหตุอัตโนมัติถ้าเปลี่ยนจาก "ขาด" มาเป็นมาทำงาน
+          note: (currentType === 'ขาด' && nextType !== 'ขาด') ? '' : (prev[empId]?.note || '')
         }
       };
     });
@@ -119,7 +130,14 @@ export default function AttendancePage() {
     }
     
     if (promptDialog.targetEmpId) {
-      updateAttendance(promptDialog.targetEmpId, 'work_type', cleanLabel);
+      setAttendances(prev => ({
+        ...prev,
+        [promptDialog.targetEmpId]: {
+          ...(prev[promptDialog.targetEmpId] || { work_type: '', wage: '', note: '' }),
+          work_type: cleanLabel,
+          wage: prev[promptDialog.targetEmpId]?.wage || '' // ปล่อยว่างให้พิมพ์เอง
+        }
+      }));
     }
     setPromptDialog({ show: false, value: '', targetEmpId: '' });
   };
@@ -129,19 +147,24 @@ export default function AttendancePage() {
     try {
       const recordsToSave = employees.map(emp => {
         const att = attendances[emp.id] || { work_type: '', wage: '', note: '' };
+        
+        // ถ้าไม่ติ๊กอะไรเลย ให้ถือว่า "ขาด"
         const finalWorkType = att.work_type || 'ขาด';
+        // ถ้าขาดหรือลา ให้ค่าแรงเป็น 0
         const finalWage = ['ขาด', 'ลา'].includes(finalWorkType) ? 0 : Number(att.wage || 0);
 
         return {
           date: selectedDate,
           employee_id: emp.id,
           emp_name: emp.full_name,
+          employee_name: emp.full_name, // ใส่ให้ครบเผื่อไว้
           work_type: finalWorkType,
           wage: finalWage,
           note: att.note || ''
         };
       });
 
+      // ลบของเก่าเฉพาะวันที่เลือกออกก่อน ป้องกันการ Insert ซ้อน
       await supabase.from('daily_attendance').delete().eq('date', selectedDate);
       const { error } = await supabase.from('daily_attendance').insert(recordsToSave);
 
@@ -177,15 +200,15 @@ export default function AttendancePage() {
   return (
     <div className="min-h-screen bg-[#F1F5F9] pb-32 font-sans relative selection:bg-emerald-500 selection:text-white">
       
-      {/* 🌟 Header Bar (อัปเกรด UI) */}
+      {/* 🌟 Header Bar */}
       <div className="bg-white/90 backdrop-blur-md border-b border-stone-200 sticky top-0 z-30 shadow-sm">
         <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-4">
           
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            {/* ปุ่มย้อนกลับทรงเดียวกับแอป */}
             <button onClick={() => router.push('/')} className="group w-10 h-10 bg-white border border-stone-200 hover:border-emerald-400 hover:bg-emerald-50 rounded-xl flex items-center justify-center transition-all shrink-0 shadow-sm">
               <svg className="w-5 h-5 text-stone-400 group-hover:text-emerald-600 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
             </button>
+            
             <div className="h-8 w-px bg-stone-200 hidden sm:block mx-1"></div>
             
             <div className="flex items-center gap-3">
@@ -210,7 +233,7 @@ export default function AttendancePage() {
                   type="date" 
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-full sm:w-auto pl-4 pr-3 py-2.5 bg-white border border-stone-300 rounded-xl text-stone-800 font-black outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm text-sm cursor-pointer"
+                  className="w-full sm:w-auto pl-4 pr-3 py-2.5 bg-white border border-stone-300 rounded-xl text-stone-800 font-black outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm text-sm cursor-pointer hover:bg-stone-50 transition-colors"
                 />
               </div>
             </div>
@@ -229,7 +252,7 @@ export default function AttendancePage() {
 
       <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 mt-6 sm:mt-8">
         
-        {/* 📊 การ์ดสรุปยอด (High Contrast) */}
+        {/* 📊 การ์ดสรุปยอด */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-8">
           <div className="bg-white border border-emerald-200 p-4 sm:p-6 rounded-[20px] shadow-sm flex flex-col justify-center">
             <div className="flex items-center gap-2 mb-2">
@@ -267,7 +290,7 @@ export default function AttendancePage() {
         </div>
 
         {/* ======================================================= */}
-        {/* 📱 MOBILE VIEW: แสดงแบบการ์ด */}
+        {/* 📱 MOBILE VIEW */}
         {/* ======================================================= */}
         <div className="block md:hidden space-y-4 mb-10">
           <div className="flex justify-between items-center mb-2 px-1">
@@ -283,13 +306,11 @@ export default function AttendancePage() {
             return (
               <div key={`mob-${emp.id}`} className={`p-4 rounded-[20px] border transition-all ${isPresent ? 'bg-white border-emerald-300 shadow-md shadow-emerald-500/10' : 'bg-white border-stone-200 shadow-sm'}`}>
                 
-                {/* ชื่อและตำแหน่ง */}
                 <div className="flex justify-between items-start mb-4 border-b border-stone-100 pb-3">
                   <div>
                     <div className="font-black text-stone-900 text-base">{emp.full_name}</div>
                     <div className="text-[11px] text-stone-500 font-bold mt-1 bg-stone-100 px-2 py-0.5 rounded inline-block">{emp.position || 'พนักงาน'}</div>
                   </div>
-                  {/* Badge สถานะ */}
                   {att.work_type && (
                     <span className={`px-2.5 py-1 rounded-md text-[10px] font-black shadow-sm ${att.work_type === 'เต็มวัน' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : att.work_type === 'ครึ่งวัน' ? 'bg-sky-100 text-sky-700 border border-sky-200' : att.work_type === 'ขาด' ? 'bg-rose-100 text-rose-700 border border-rose-200' : att.work_type === 'ลา' ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-indigo-100 text-indigo-700 border border-indigo-200'}`}>
                       {att.work_type}
@@ -297,7 +318,6 @@ export default function AttendancePage() {
                   )}
                 </div>
 
-                {/* ปุ่มกดสถานะ */}
                 <div className="grid grid-cols-4 gap-2 mb-4">
                   <button onClick={() => handleToggleWorkType(emp.id, 'เต็มวัน')} className={`col-span-2 py-3 rounded-xl text-xs font-black transition-all border ${att.work_type === 'เต็มวัน' ? 'bg-emerald-500 text-white border-emerald-600 shadow-md' : 'bg-white text-stone-600 border-stone-300 hover:bg-stone-50'}`}>เต็มวัน</button>
                   <button onClick={() => handleToggleWorkType(emp.id, 'ครึ่งวัน')} className={`col-span-2 py-3 rounded-xl text-xs font-black transition-all border ${att.work_type === 'ครึ่งวัน' ? 'bg-sky-500 text-white border-sky-600 shadow-md' : 'bg-white text-stone-600 border-stone-300 hover:bg-stone-50'}`}>ครึ่งวัน</button>
@@ -306,7 +326,7 @@ export default function AttendancePage() {
                     value={isCustomWork ? att.work_type : ''} 
                     onChange={(e) => {
                       if (e.target.value === 'ADD_NEW') setPromptDialog({ show: true, value: '', targetEmpId: emp.id });
-                      else updateAttendance(emp.id, 'work_type', e.target.value);
+                      else handleToggleWorkType(emp.id, e.target.value);
                     }}
                     className={`col-span-2 px-2 py-3 rounded-xl text-xs font-black outline-none cursor-pointer transition-all border text-center ${isCustomWork ? 'bg-indigo-500 text-white border-indigo-600 shadow-md' : 'bg-white text-stone-600 border-stone-300 hover:bg-stone-50 appearance-none text-center'}`}
                   >
@@ -319,17 +339,16 @@ export default function AttendancePage() {
                   <button onClick={() => handleToggleWorkType(emp.id, 'ลา')} className={`col-span-1 py-3 rounded-xl text-xs font-black transition-all border ${att.work_type === 'ลา' ? 'bg-amber-500 text-white border-amber-600 shadow-md' : 'bg-white text-amber-600 border-amber-200 hover:bg-amber-50'}`}>ลา</button>
                 </div>
 
-                {/* ช่องกรอกตัวเลขและหมายเหตุ */}
                 <div className="space-y-3 bg-stone-50/50 p-3 rounded-xl border border-stone-100">
                   {isPresent && (
                     <div className="flex items-center relative animate-in fade-in duration-300">
                       <div className="absolute left-3 text-[11px] font-black text-emerald-700">ค่าแรงวันนี้:</div>
                       <input 
                         type="number" 
-                        placeholder="0" 
+                        placeholder="ระบุยอดเงิน" 
                         value={att.wage}
                         onChange={(e) => updateAttendance(emp.id, 'wage', e.target.value)}
-                        className="w-full pl-20 pr-8 py-2.5 bg-white border border-stone-300 text-emerald-800 font-black rounded-lg outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-right shadow-inner text-sm"
+                        className="w-full pl-20 pr-8 py-2.5 bg-white border border-stone-300 text-emerald-800 font-black rounded-lg outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-right shadow-inner text-sm placeholder:text-stone-300"
                       />
                       <span className="absolute right-3 text-[10px] font-bold text-stone-400">฿</span>
                     </div>
@@ -349,9 +368,8 @@ export default function AttendancePage() {
           })}
         </div>
 
-
         {/* ======================================================= */}
-        {/* 💻 DESKTOP VIEW: แสดงแบบตาราง (High Contrast) */}
+        {/* 💻 DESKTOP VIEW */}
         {/* ======================================================= */}
         <div className="hidden md:block bg-white rounded-[24px] border border-stone-200 shadow-sm overflow-hidden mb-10">
           <div className="p-5 bg-stone-50 border-b border-stone-200 flex justify-between items-center">
@@ -387,7 +405,7 @@ export default function AttendancePage() {
                           <button onClick={() => handleToggleWorkType(emp.id, 'เต็มวัน')} className={`px-4 py-2.5 rounded-lg text-[11px] font-black transition-all border ${att.work_type === 'เต็มวัน' ? 'bg-emerald-500 text-white border-emerald-600 shadow-md' : 'bg-white text-stone-600 border-stone-300 hover:bg-stone-50'}`}>เต็มวัน</button>
                           <button onClick={() => handleToggleWorkType(emp.id, 'ครึ่งวัน')} className={`px-4 py-2.5 rounded-lg text-[11px] font-black transition-all border ${att.work_type === 'ครึ่งวัน' ? 'bg-sky-500 text-white border-sky-600 shadow-md' : 'bg-white text-stone-600 border-stone-300 hover:bg-stone-50'}`}>ครึ่งวัน</button>
 
-                          <select value={isCustomWork ? att.work_type : ''} onChange={(e) => { if (e.target.value === 'ADD_NEW') setPromptDialog({ show: true, value: '', targetEmpId: emp.id }); else updateAttendance(emp.id, 'work_type', e.target.value); }} className={`px-3 py-2.5 rounded-lg text-[11px] font-black outline-none cursor-pointer transition-all border ${isCustomWork ? 'bg-indigo-500 text-white border-indigo-600 shadow-md' : 'bg-white text-stone-600 border-stone-300 hover:bg-stone-50'}`}>
+                          <select value={isCustomWork ? att.work_type : ''} onChange={(e) => { if (e.target.value === 'ADD_NEW') setPromptDialog({ show: true, value: '', targetEmpId: emp.id }); else handleToggleWorkType(emp.id, e.target.value); }} className={`px-3 py-2.5 rounded-lg text-[11px] font-black outline-none cursor-pointer transition-all border ${isCustomWork ? 'bg-indigo-500 text-white border-indigo-600 shadow-md' : 'bg-white text-stone-600 border-stone-300 hover:bg-stone-50'}`}>
                             <option value="" disabled>งานอื่นๆ ▾</option>
                             {jobOptions.map(job => <option key={job} value={job} className="text-stone-800 bg-white">{job}</option>)}
                             <option value="ADD_NEW" className="text-indigo-600 bg-indigo-50 font-bold">➕ เพิ่มใหม่...</option>
@@ -400,7 +418,7 @@ export default function AttendancePage() {
 
                           {isPresent && (
                             <div className="ml-2 flex items-center relative animate-in fade-in duration-300">
-                              <input type="number" placeholder="ค่าแรง..." value={att.wage} onChange={(e) => updateAttendance(emp.id, 'wage', e.target.value)} className="w-28 pl-3 pr-8 py-2.5 bg-white border border-stone-300 text-stone-900 font-black rounded-lg outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-xs shadow-inner tabular-nums" />
+                              <input type="number" placeholder="ระบุยอดเงิน" value={att.wage} onChange={(e) => updateAttendance(emp.id, 'wage', e.target.value)} className="w-28 pl-3 pr-8 py-2.5 bg-white border border-stone-300 text-stone-900 font-black rounded-lg outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-xs shadow-inner tabular-nums placeholder:text-stone-300" />
                               <span className="absolute right-3 text-[10px] font-bold text-stone-400 pointer-events-none">฿</span>
                             </div>
                           )}

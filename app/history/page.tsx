@@ -391,11 +391,11 @@ export default function HistoryPage() {
           </div>
         </div>
 
-        {/* 🌟 Advanced Search & Tri-Layer Filters 🌟 */}
+        {/* 🌟 Advanced Search & Smart Grid Filters (อัปเกรดไม่ให้ต้องลากนิ้วเลื่อนในมือถือ) 🌟 */}
         <div className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-[0_2px_16px_-4px_rgba(0,0,0,0.03)] space-y-4">
           
-          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-            <div className="relative flex-grow max-w-md">
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+            <div className="relative flex-grow max-w-lg">
               <span className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
               </span>
@@ -413,7 +413,8 @@ export default function HistoryPage() {
               )}
             </div>
 
-            <div className="flex overflow-x-auto pb-1 md:pb-0 gap-1 text-xs font-bold no-scrollbar bg-slate-100/80 p-1 rounded-xl shrink-0 border border-slate-200/60">
+            {/* ปุ่มกรองเวลา: จัดแบบ Grid 2x2 ในมือถือ กดง่ายๆ ไม่ต้องเลื่อนแนวนอน */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-xs font-bold bg-slate-100/80 p-1.5 rounded-xl border border-slate-200/60 shrink-0">
               {[
                 { id: 'ALL', label: '⏳ ทุกช่วงเวลา' },
                 { id: 'TODAY', label: '☀️ วันนี้' },
@@ -423,7 +424,7 @@ export default function HistoryPage() {
                 <button
                   key={tab.id}
                   onClick={() => setDateFilter(tab.id as any)}
-                  className={`px-3 py-1.5 rounded-lg transition-all whitespace-nowrap ${
+                  className={`px-3 py-2 sm:py-1.5 rounded-lg transition-all text-center whitespace-nowrap ${
                     dateFilter === tab.id 
                       ? 'bg-indigo-600 text-white shadow-sm font-black' 
                       : 'text-slate-500 hover:text-slate-800 hover:bg-white/40'
@@ -435,9 +436,9 @@ export default function HistoryPage() {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-slate-100">
-            {/* กรองประเภท Action จัดกลุ่มครบ 10 ประเภท */}
-            <div className="flex overflow-x-auto pb-1 sm:pb-0 gap-1.5 text-xs font-bold no-scrollbar">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-3 border-t border-slate-100">
+            {/* กรองประเภท Action: ปรับเป็น Flex Wrap ปุ่มเรียงต่อกันอัตโนมัติบนมือถือ */}
+            <div className="flex flex-wrap gap-1.5 text-xs font-bold">
               {[
                 { id: 'ALL', label: '⚡ ทั้งหมด' },
                 { id: 'CREATE', label: '🟢 เพิ่ม/สร้าง' },
@@ -449,7 +450,7 @@ export default function HistoryPage() {
                 <button
                   key={tab.id}
                   onClick={() => setSelectedAction(tab.id)}
-                  className={`px-3 py-1 rounded-lg transition-all whitespace-nowrap border ${
+                  className={`px-3 py-1.5 sm:py-1 rounded-lg transition-all whitespace-nowrap border ${
                     selectedAction === tab.id 
                       ? 'bg-slate-900 text-white border-slate-900 shadow-sm font-black' 
                       : 'bg-slate-50/80 text-slate-600 border-slate-200/60 hover:bg-slate-100'
@@ -460,29 +461,28 @@ export default function HistoryPage() {
               ))}
             </div>
 
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 sm:pb-0 justify-between sm:justify-end">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">หมวดหมู่:</span>
-                {availableModules.map((mod) => (
-                  <button
-                    key={mod}
-                    onClick={() => setSelectedModule(mod)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0 border ${
-                      selectedModule === mod 
-                        ? 'bg-indigo-50 text-indigo-700 border-indigo-200 font-black' 
-                        : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
-                    }`}
-                  >
-                    {mod === 'ALL' ? '📦 ทั้งหมด' : mod}
-                  </button>
-                ))}
-              </div>
+            {/* กรอง หมวดหมู่: ปรับเป็น Flex Wrap เรียงต่อกัน ไม่ตกขอบ */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">หมวดหมู่:</span>
+              {availableModules.map((mod) => (
+                <button
+                  key={mod}
+                  onClick={() => setSelectedModule(mod)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap border ${
+                    selectedModule === mod 
+                      ? 'bg-indigo-50 text-indigo-700 border-indigo-200 font-black' 
+                      : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  {mod === 'ALL' ? '📦 ทั้งหมด' : mod}
+                </button>
+              ))}
 
               {/* ปุ่มล้างค่าการค้นหา */}
               {isFilterActive && (
                 <button
                   onClick={resetFilters}
-                  className="px-2.5 py-1 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg text-xs font-bold transition-all shrink-0 ml-2"
+                  className="px-2.5 py-1 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg text-xs font-bold transition-all whitespace-nowrap ml-1"
                   title="ล้างตัวกรองทั้งหมด"
                 >
                   ✕ ล้างตัวกรอง
@@ -494,7 +494,7 @@ export default function HistoryPage() {
         </div>
 
         {/* ======================================================= */}
-        {/* 📱 MOBILE VIEW: Sleek Timeline Cards 📱 */}
+        {/* 📱 MOBILE VIEW: Sleek Timeline Cards (ล็อกบรรทัดเดียวไม่ให้แตก) 📱 */}
         {/* ======================================================= */}
         <div className="block md:hidden space-y-3">
           {filteredLogs.length > 0 ? filteredLogs.map((log) => {
@@ -510,8 +510,8 @@ export default function HistoryPage() {
               >
                 <div className="flex justify-between items-start mb-2 gap-2">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[10px] font-black text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/60">{log.module}</span>
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black border ${meta.bg}`}>
+                    <span className="text-[10px] font-black text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/60 whitespace-nowrap">{log.module}</span>
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black border whitespace-nowrap ${meta.bg}`}>
                       <span>{meta.icon}</span>
                       <span>{meta.label}</span>
                     </span>
@@ -541,17 +541,17 @@ export default function HistoryPage() {
         </div>
 
         {/* ======================================================= */}
-        {/* 💻 DESKTOP VIEW: Clean Enterprise Table 💻 */}
+        {/* 💻 DESKTOP VIEW: Clean Enterprise Table (ล็อกข้อความบรรทัดเดียว) 💻 */}
         {/* ======================================================= */}
         <div className="hidden md:block bg-white rounded-3xl border border-slate-200/80 shadow-[0_2px_16px_-4px_rgba(0,0,0,0.04)] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  <th className="py-4 px-6 w-36">วัน-เวลาที่บันทึก</th>
-                  <th className="py-4 px-6 w-48">ผู้ใช้งาน (User)</th>
-                  <th className="py-4 px-6 w-40">หมวดหมู่ระบบ</th>
-                  <th className="py-4 px-6 w-36 text-center">ประเภทรายการ</th>
+                  <th className="py-4 px-6 whitespace-nowrap">วัน-เวลาที่บันทึก</th>
+                  <th className="py-4 px-6 whitespace-nowrap">ผู้ใช้งาน (User)</th>
+                  <th className="py-4 px-6 whitespace-nowrap">หมวดหมู่ระบบ</th>
+                  <th className="py-4 px-6 text-center whitespace-nowrap">ประเภทรายการ</th>
                   <th className="py-4 px-6">รายละเอียดการทำรายการ</th>
                 </tr>
               </thead>
@@ -568,7 +568,7 @@ export default function HistoryPage() {
                         <div className="text-[11px] font-semibold text-slate-400 mt-0.5">{dt.time}</div>
                       </td>
 
-                      <td className="py-4 px-6">
+                      <td className="py-4 px-6 whitespace-nowrap">
                         <div className="flex items-center gap-2.5">
                           <div className={`w-8 h-8 rounded-xl text-white font-black text-xs flex items-center justify-center shrink-0 shadow-sm ${
                             meta.isCritical ? 'bg-gradient-to-br from-amber-500 to-rose-600 shadow-rose-500/20' : 'bg-gradient-to-br from-indigo-500 to-violet-600 shadow-indigo-500/10'
@@ -581,14 +581,14 @@ export default function HistoryPage() {
                         </div>
                       </td>
 
-                      <td className="py-4 px-6">
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200/80">
+                      <td className="py-4 px-6 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200/80 whitespace-nowrap">
                           {log.module}
                         </span>
                       </td>
 
-                      <td className="py-4 px-6 text-center">
-                        <span className={`inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-xs font-black border ${meta.bg}`}>
+                      <td className="py-4 px-6 text-center whitespace-nowrap">
+                        <span className={`inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-xs font-black border whitespace-nowrap ${meta.bg}`}>
                           <span>{meta.icon}</span>
                           <span>{meta.label}</span>
                         </span>

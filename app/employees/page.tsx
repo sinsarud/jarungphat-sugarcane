@@ -20,7 +20,6 @@ export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // 🌟 State สำหรับเก็บตัวเลือกตำแหน่ง
   const [positions, setPositions] = useState<string[]>([]);
 
   // States สำหรับ Popup Modals
@@ -32,7 +31,8 @@ export default function EmployeesPage() {
   // States สำหรับข้อมูลในฟอร์ม
   const [editingEmp, setEditingEmp] = useState<Employee | null>(null);
   const [formCode, setFormCode] = useState('');
-  const [formName, setFormName] = useState('');
+  const [formFirstName, setFormFirstName] = useState('');
+  const [formLastName, setFormLastName] = useState('');
   const [formPosition, setFormPosition] = useState('');
   const [formPhone, setFormPhone] = useState('');
   const [formStatus, setFormStatus] = useState<'active' | 'inactive'>('active');
@@ -79,7 +79,8 @@ export default function EmployeesPage() {
       ? Math.max(...employees.map(e => parseInt(e.emp_code.replace('EMP-', '') || '0'))) + 1 
       : 1;
     setFormCode(`EMP-${String(nextCodeNum).padStart(3, '0')}`);
-    setFormName('');
+    setFormFirstName('');
+    setFormLastName('');
     setFormPosition(positions.length > 0 ? positions[0] : 'คนตัดอ้อย');
     setFormPhone('');
     setFormStatus('active');
@@ -89,7 +90,10 @@ export default function EmployeesPage() {
   const openEditModal = (emp: Employee) => {
     setEditingEmp(emp);
     setFormCode(emp.emp_code);
-    setFormName(emp.full_name);
+    
+    const nameParts = emp.full_name.trim().split(' ');
+    setFormFirstName(nameParts[0] || '');
+    setFormLastName(nameParts.slice(1).join(' ') || '');
     
     if (emp.position && !positions.includes(emp.position)) {
       setPositions([...positions, emp.position]);
@@ -124,15 +128,17 @@ export default function EmployeesPage() {
   };
 
   const handleSave = async () => {
-    if (!formCode.trim() || !formName.trim()) {
-      setPopup({ show: true, type: 'error', message: 'กรุณากรอก รหัสพนักงาน และ ชื่อ-นามสกุล ให้ครบถ้วน' });
+    if (!formCode.trim() || !formFirstName.trim()) {
+      setPopup({ show: true, type: 'error', message: 'กรุณากรอก รหัสพนักงาน และ ชื่อจริง ให้ครบถ้วน' });
       return;
     }
 
     setSaving(true);
+    const finalFullName = formLastName.trim() ? `${formFirstName.trim()} ${formLastName.trim()}` : formFirstName.trim();
+
     const empData = {
       emp_code: formCode.trim().toUpperCase(),
-      full_name: formName.trim(),
+      full_name: finalFullName,
       position: formPosition.trim(),
       phone: formPhone.trim(),
       status: formStatus
@@ -154,6 +160,24 @@ export default function EmployeesPage() {
       setPopup({ show: true, type: 'error', message: error.message });
     } finally {
       setSaving(false);
+    }
+  };
+
+  // 🌟 ระบบสลับสถานะแบบ "กดปุ๊บ เปลี่ยนปั๊บ" (Optimistic Update)
+  const handleToggleStatusInstant = async (emp: Employee) => {
+    const newStatus = emp.status === 'active' ? 'inactive' : 'active';
+    
+    // 1. เปลี่ยนสีหน้าจอให้ผู้ใช้เห็นทันที โดยไม่ต้องรอโหลด
+    setEmployees(prev => prev.map(e => e.id === emp.id ? { ...e, status: newStatus } : e));
+
+    try {
+      // 2. แอบส่งข้อมูลไปเซฟที่หลังบ้าน
+      const { error } = await supabase.from('employees').update({ status: newStatus }).eq('id', emp.id);
+      if (error) throw error;
+    } catch (error: any) {
+      // 3. ถ้าเน็ตหลุดหรือมี Error ค่อยเด้งกลับเป็นค่าเดิมและแจ้งเตือน
+      setEmployees(prev => prev.map(e => e.id === emp.id ? { ...e, status: emp.status } : e));
+      setPopup({ show: true, type: 'error', message: 'ไม่สามารถเปลี่ยนสถานะได้: ' + error.message });
     }
   };
 
@@ -184,35 +208,27 @@ export default function EmployeesPage() {
   return (
     <div className="min-h-screen bg-[#F1F5F9] pb-24 font-sans relative selection:bg-blue-500 selection:text-white">
       
-      {/* 🌟 Premium Header Bar */}
+      {/* Premium Header Bar */}
       <div className="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30 shadow-sm">
         <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            {/* ⬅️ ปุ่มย้อนกลับดีไซน์ใหม่ */}
             <button onClick={() => router.push('/')} className="group w-10 h-10 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 rounded-xl flex items-center justify-center transition-all shrink-0 shadow-sm">
               <svg className="w-5 h-5 text-slate-400 group-hover:text-blue-600 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
             </button>
-            
             <div className="h-8 w-px bg-slate-200 hidden sm:block mx-1"></div>
-            
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-xl flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
               </div>
               <div className="flex flex-col justify-center">
                 <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none mb-1">ฐานข้อมูลพนักงาน</h1>
-                <p className="text-[11px] font-bold text-slate-500 leading-none hidden sm:block uppercase tracking-wider">
-                  จัดการรายชื่อและข้อมูลติดต่อ
-                </p>
+                <p className="text-[11px] font-bold text-slate-500 leading-none hidden sm:block uppercase tracking-wider">จัดการรายชื่อและข้อมูลติดต่อ</p>
               </div>
             </div>
           </div>
           
-          <button 
-            onClick={openAddModal} 
-            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white px-6 py-3 sm:py-2.5 rounded-xl text-sm font-black shadow-lg shadow-blue-600/30 flex items-center justify-center transition-all"
-          >
+          <button onClick={openAddModal} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white px-6 py-3 sm:py-2.5 rounded-xl text-sm font-black shadow-lg shadow-blue-600/30 flex items-center justify-center transition-all">
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" /></svg>
             <span>เพิ่มพนักงานใหม่</span>
           </button>
@@ -221,7 +237,7 @@ export default function EmployeesPage() {
 
       <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 mt-8">
         
-        {/* 🌟 ช่องค้นหา (Search Box High Contrast) */}
+        {/* ช่องค้นหา */}
         <div className="bg-white p-5 rounded-[24px] border border-slate-200 shadow-sm mb-6 flex items-center">
           <div className="relative w-full max-w-lg">
             <span className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -238,11 +254,11 @@ export default function EmployeesPage() {
         </div>
 
         {/* ======================================================= */}
-        {/* 📱 MOBILE VIEW: แสดงแบบการ์ดพนักงาน (ซ่อนบนจอใหญ่) */}
+        {/* 📱 MOBILE VIEW */}
         {/* ======================================================= */}
         <div className="block md:hidden space-y-4">
           {filteredEmployees.length > 0 ? filteredEmployees.map((emp) => (
-            <div key={`mob-${emp.id}`} className={`bg-white p-5 rounded-[20px] border border-slate-200 shadow-sm relative transition-all ${emp.status === 'inactive' ? 'opacity-60 bg-slate-50/50' : ''}`}>
+            <div key={`mob-${emp.id}`} className={`bg-white p-5 rounded-[20px] border border-slate-200 shadow-sm relative transition-all duration-300 ${emp.status === 'inactive' ? 'opacity-60 bg-slate-50/50' : ''}`}>
               
               <div className="flex justify-between items-start mb-4 border-b border-slate-100 pb-4">
                 <div className="pr-2">
@@ -250,10 +266,21 @@ export default function EmployeesPage() {
                   <div className="font-black text-slate-900 text-lg leading-tight">{emp.full_name}</div>
                 </div>
                 <div>
-                  {emp.status === 'active' 
-                    ? <span className="px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-md text-[10px] font-black whitespace-nowrap shadow-sm">ทำงานอยู่</span>
-                    : <span className="px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-500 rounded-md text-[10px] font-black whitespace-nowrap shadow-sm">ออก/พักงาน</span>
-                  }
+                  {/* 🌟 ป้ายสถานะแบบกดได้ (Mobile) */}
+                  <button 
+                    onClick={() => handleToggleStatusInstant(emp)}
+                    title="คลิกเพื่อสลับสถานะ"
+                    className="transition-transform hover:scale-105 active:scale-95 focus:outline-none"
+                  >
+                    {emp.status === 'active' 
+                      ? <span className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 rounded-md text-[10px] font-black whitespace-nowrap shadow-sm flex items-center gap-1.5 transition-colors">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> ทำงานอยู่
+                        </span>
+                      : <span className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-500 rounded-md text-[10px] font-black whitespace-nowrap shadow-sm flex items-center gap-1.5 transition-colors">
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span> ออก/พักงาน
+                        </span>
+                    }
+                  </button>
                 </div>
               </div>
 
@@ -268,12 +295,11 @@ export default function EmployeesPage() {
                     <a href={`tel:${emp.phone}`} className="text-[13px] font-bold text-blue-600 flex items-center gap-1.5">
                       📞 {emp.phone}
                     </a>
-                  ) : (
-                    <p className="text-[13px] font-bold text-slate-400">-</p>
-                  )}
+                  ) : <p className="text-[13px] font-bold text-slate-400">-</p>}
                 </div>
               </div>
 
+              {/* เอาปุ่มเปลี่ยนสถานะออก เหลือแค่ แก้ไข กับ ลบ */}
               <div className="flex gap-3 pt-4 border-t border-slate-100">
                 <button onClick={() => openEditModal(emp)} className="flex-1 py-3 bg-white border border-blue-200 text-blue-600 font-black rounded-xl text-xs hover:bg-blue-50 transition-colors shadow-sm">
                   แก้ไขข้อมูล
@@ -294,7 +320,7 @@ export default function EmployeesPage() {
         </div>
 
         {/* ======================================================= */}
-        {/* 💻 DESKTOP VIEW: แสดงแบบตาราง (หัวตารางสีสว่าง คลีน) */}
+        {/* 💻 DESKTOP VIEW */}
         {/* ======================================================= */}
         <div className="hidden md:block bg-white rounded-[24px] border border-slate-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
@@ -311,21 +337,35 @@ export default function EmployeesPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
                 {filteredEmployees.length > 0 ? filteredEmployees.map((emp) => (
-                  <tr key={emp.id} className={`hover:bg-blue-50/40 transition-colors even:bg-slate-50/50 ${emp.status === 'inactive' ? 'opacity-60' : ''}`}>
+                  <tr key={emp.id} className={`hover:bg-blue-50/40 transition-all duration-300 even:bg-slate-50/50 ${emp.status === 'inactive' ? 'opacity-60' : ''}`}>
                     <td className="py-4 px-6 font-black text-blue-600 border-r border-slate-100">{emp.emp_code}</td>
                     <td className="py-4 px-6 font-black text-slate-900 border-r border-slate-100 text-[15px]">{emp.full_name}</td>
                     <td className="py-4 px-6 text-slate-700 border-r border-slate-100">
                       <span className="px-3 py-1 bg-white border border-slate-200 text-slate-700 rounded-md font-bold text-[11px] shadow-sm">{emp.position || '-'}</span>
                     </td>
                     <td className="py-4 px-6 text-slate-600 font-bold border-r border-slate-100">{emp.phone || '-'}</td>
+                    
+                    {/* 🌟 ป้ายสถานะแบบกดได้ (Desktop) */}
                     <td className="py-4 px-6 text-center border-r border-slate-100">
-                      {emp.status === 'active' 
-                        ? <span className="px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-full text-[11px] font-black shadow-sm">ทำงานอยู่</span>
-                        : <span className="px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-500 rounded-full text-[11px] font-black shadow-sm">ออก/พักงาน</span>
-                      }
+                      <button 
+                        onClick={() => handleToggleStatusInstant(emp)}
+                        title="คลิกเพื่อสลับสถานะ"
+                        className="transition-transform hover:scale-105 active:scale-95 focus:outline-none"
+                      >
+                        {emp.status === 'active' 
+                          ? <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 rounded-full text-[11px] font-black shadow-sm transition-colors">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> ทำงานอยู่
+                            </span>
+                          : <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-500 rounded-full text-[11px] font-black shadow-sm transition-colors">
+                              <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span> ออก/พักงาน
+                            </span>
+                        }
+                      </button>
                     </td>
+                    
                     <td className="py-4 px-6 text-center">
                       <div className="flex items-center justify-center gap-2">
+                        {/* เอาปุ่มเปลี่ยนสถานะออก เหลือแค่ แก้ไข กับ ลบ */}
                         <button onClick={() => openEditModal(emp)} className="text-xs font-bold text-blue-600 hover:text-white bg-white hover:bg-blue-500 px-3 py-2 rounded-lg border border-blue-200 transition-colors shadow-sm">
                           แก้ไข
                         </button>
@@ -353,14 +393,13 @@ export default function EmployeesPage() {
       </div>
 
       {/* ======================================================= */}
-      {/* 🌟 MODAL 1: เพิ่ม/แก้ไข ข้อมูลพนักงาน (Premium UI) 🌟 */}
+      {/* 🌟 MODAL 1: เพิ่ม/แก้ไข ข้อมูลพนักงาน */}
       {/* ======================================================= */}
       {showModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setShowModal(false)}></div>
           
           <div className="bg-white w-full max-w-lg rounded-[24px] shadow-2xl relative z-10 animate-in fade-in zoom-in-95 duration-200 overflow-hidden flex flex-col max-h-[95vh] border border-slate-200">
-            {/* แถบสีตกแต่งด้านบน */}
             <div className="h-1.5 w-full bg-gradient-to-r from-blue-500 to-indigo-600 shrink-0"></div>
             
             <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-white shrink-0">
@@ -389,9 +428,15 @@ export default function EmployeesPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider mb-2 block ml-1">ชื่อ-นามสกุล</label>
-                <input type="text" value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="เช่น สมหมาย ใจดี" className="w-full px-4 py-3.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm shadow-sm transition-all" />
+              <div className="flex flex-col sm:flex-row gap-5">
+                <div className="w-full sm:w-1/2">
+                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider mb-2 block ml-1">ชื่อจริง <span className="text-rose-500">*</span></label>
+                  <input type="text" value={formFirstName} onChange={(e) => setFormFirstName(e.target.value)} placeholder="เช่น สมหมาย" className="w-full px-4 py-3.5 bg-slate-50 border border-slate-300 rounded-xl font-black text-slate-900 outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-base transition-all" required />
+                </div>
+                <div className="w-full sm:w-1/2">
+                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider mb-2 block ml-1">นามสกุล</label>
+                  <input type="text" value={formLastName} onChange={(e) => setFormLastName(e.target.value)} placeholder="(เว้นว่างได้)" className="w-full px-4 py-3.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm shadow-sm transition-all" />
+                </div>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-5">
@@ -439,7 +484,7 @@ export default function EmployeesPage() {
       )}
 
       {/* ======================================================= */}
-      {/* 🌟 MODAL 2: CUSTOM PROMPT เพิ่มตำแหน่งใหม่ (z-[120]) 🌟 */}
+      {/* 🌟 MODAL 2: CUSTOM PROMPT เพิ่มตำแหน่งใหม่ (z-[120]) */}
       {/* ======================================================= */}
       {promptDialog.show && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
@@ -467,7 +512,7 @@ export default function EmployeesPage() {
       )}
 
       {/* ======================================================= */}
-      {/* 🌟 MODAL 3: ป๊อปอัปยืนยันการลบข้อมูล (z-[140]) 🌟 */}
+      {/* 🌟 MODAL 3: ป๊อปอัปยืนยันการลบข้อมูล (z-[140]) */}
       {/* ======================================================= */}
       {showDeleteModal.show && (
         <div className="fixed inset-0 z-[140] flex items-center justify-center p-4">
@@ -491,7 +536,7 @@ export default function EmployeesPage() {
       )}
 
       {/* ======================================================= */}
-      {/* 🌟 POPUP แจ้งเตือนสถานะความสำเร็จ / ขัดข้อง (z-[150]) 🌟 */}
+      {/* 🌟 POPUP แจ้งเตือนสถานะความสำเร็จ / ขัดข้อง (z-[150]) */}
       {/* ======================================================= */}
       {popup.show && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">

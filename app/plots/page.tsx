@@ -6,9 +6,9 @@ import { supabase } from '../lib/supabase';
 import dynamic from 'next/dynamic';
 
 // ==========================================
-// 🗺️ ระบบแผนที่ Google Satellite + เปลี่ยนไอคอน GPS + ค้นหาด้วยพิกัด
+// 🗺️ ระบบแผนที่ Google Satellite + เปลี่ยนไอคอน GPS + ค้นหาด้วยพิกัด + ดึงจุดกึ่งกลาง (Center)
 // ==========================================
-const MapComponent = ({ onAreaCalculated }: { onAreaCalculated: (rai: number) => void }) => {
+const MapComponent = ({ onAreaCalculated }: { onAreaCalculated: (rai: number, centerLat: number, centerLng: number) => void }) => {
   const L = require('leaflet');
   const { MapContainer, TileLayer, FeatureGroup, useMap } = require('react-leaflet');
   const { EditControl } = require('react-leaflet-draw');
@@ -26,7 +26,11 @@ const MapComponent = ({ onAreaCalculated }: { onAreaCalculated: (rai: number) =>
       const latlngs = layer.getLatLngs()[0];
       const areaSqm = L.GeometryUtil.geodesicArea(latlngs);
       const areaRai = (areaSqm / 1600).toFixed(2);
-      onAreaCalculated(Number(areaRai));
+      
+      const bounds = layer.getBounds();
+      const center = bounds.getCenter();
+      
+      onAreaCalculated(Number(areaRai), center.lat, center.lng);
     }
   };
 
@@ -40,11 +44,9 @@ const MapComponent = ({ onAreaCalculated }: { onAreaCalculated: (rai: number) =>
       if (!query.trim()) return;
       setIsSearching(true);
 
-      // 🌟 ตรวจสอบว่าข้อความที่ค้นหาเป็นพิกัดละติจูด,ลองติจูด หรือไม่?
       const coordsMatch = query.trim().match(/^-?\d+(\.\d+)?[\s,]+-?\d+(\.\d+)?$/);
 
       if (coordsMatch) {
-        // ถ้าเป็นตัวเลขพิกัด ให้จับแยกและบินไปจุดนั้นทันที
         const parts = query.replace(/,/g, ' ').split(/\s+/).filter(Boolean);
         const lat = parseFloat(parts[0]);
         const lon = parseFloat(parts[1]);
@@ -54,7 +56,6 @@ const MapComponent = ({ onAreaCalculated }: { onAreaCalculated: (rai: number) =>
         return; 
       }
 
-      // 🌟 ถ้าไม่ใช่ตัวเลขพิกัด ค่อยค้นหาด้วยชื่อผ่าน API
       try {
         const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ' Thailand')}`);
         const data = await res.json();
@@ -105,7 +106,6 @@ const MapComponent = ({ onAreaCalculated }: { onAreaCalculated: (rai: number) =>
             </button>
           </form>
 
-          {/* 🌟 ไอคอนเป้าเล็ง GPS แบบ Google Maps */}
           <button 
             type="button" 
             onClick={handleGetLocation} 
@@ -122,7 +122,6 @@ const MapComponent = ({ onAreaCalculated }: { onAreaCalculated: (rai: number) =>
     );
   };
 
-  // 🌟 URL ของ Google Maps Satellite Hybrid (ภาพดาวเทียม + เส้นถนน/ป้ายชื่อสถานที่)
   const googleSatelliteUrl = "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}";
 
   return (
@@ -133,11 +132,10 @@ const MapComponent = ({ onAreaCalculated }: { onAreaCalculated: (rai: number) =>
         
         <SearchControl />
 
-        {/* 🌟 แสดงแผนที่ดาวเทียมของ Google Maps */}
         <TileLayer
           url={googleSatelliteUrl}
           attribution="&copy; Google Maps"
-          maxZoom={20} // Google อนุญาตให้ซูมได้ลึกกว่า GISTDA (จาก 19 เป็น 20)
+          maxZoom={20}
         />
         
         <FeatureGroup>
@@ -171,10 +169,13 @@ const DynamicMap = dynamic(() => Promise.resolve(MapComponent), { ssr: false });
 interface Plot {
   id: string;
   code: string; 
+  name?: string; // 🌟 เพิ่มข้อมูลชื่อแปลง
   area_rai: number; 
   variety: string; 
   cycle: string; 
   status: 'growing' | 'ready' | 'harvesting' | 'resting'; 
+  lat?: number | null; 
+  lon?: number | null; 
   last_updated: string;
 }
 
@@ -189,24 +190,31 @@ export default function PlotsPage() {
 
   const [showModal, setShowModal] = useState(false);
   const [editingPlot, setEditingPlot] = useState<Plot | null>(null);
+  
+  // 🌟 ฟอร์มข้อมูล
   const [formCode, setFormCode] = useState('');
+  const [formName, setFormName] = useState(''); // 🌟 State สำหรับชื่อแปลง
   const [formAreaRai, setFormAreaRai] = useState<number | ''>('');
   const [formVariety, setFormVariety] = useState('');
   const [formCycle, setFormCycle] = useState('');
   const [formStatus, setFormStatus] = useState<'growing' | 'ready' | 'harvesting' | 'resting'>('growing');
+  const [formLat, setFormLat] = useState<number | ''>(''); 
+  const [formLon, setFormLon] = useState<number | ''>(''); 
 
   const [popup, setPopup] = useState({ show: false, type: '', message: '' });
   const [deleteDialog, setDeleteDialog] = useState({ show: false, id: '', code: '' });
   const [promptDialog, setPromptDialog] = useState<{ show: boolean, category: 'variety' | 'cycle', value: string }>({ show: false, category: 'variety', value: '' });
   
-  const [mapConfirmDialog, setMapConfirmDialog] = useState({ show: false, rai: 0 });
+  const [mapConfirmDialog, setMapConfirmDialog] = useState({ show: false, rai: 0, lat: 0, lng: 0 });
 
   const fetchData = async () => {
     const { data: plotsData } = await supabase.from('plots').select('*').order('code', { ascending: true });
     if (plotsData) {
       setPlots(plotsData.map((d: any) => ({
-        id: d.id, code: d.code, area_rai: Number(d.area_rai),
-        variety: d.variety, cycle: d.cycle, status: d.status, last_updated: d.last_updated
+        id: d.id, code: d.code, name: d.name, area_rai: Number(d.area_rai), // 🌟 ดึงชื่อมาด้วย
+        variety: d.variety, cycle: d.cycle, status: d.status,
+        lat: d.lat, lon: d.lon,
+        last_updated: d.last_updated
       })));
     }
 
@@ -273,24 +281,30 @@ export default function PlotsPage() {
   const openAddModal = () => {
     setEditingPlot(null);
     setFormCode('');
+    setFormName(''); // 🌟 รีเซ็ตชื่อ
     setFormAreaRai('');
     setFormVariety(varieties.length > 0 ? varieties[0] : '');
     setFormCycle(cycles.length > 0 ? cycles[0] : '');
     setFormStatus('growing');
+    setFormLat('');
+    setFormLon('');
     setShowModal(true);
   };
 
-  const handleMapAreaCalculated = (rai: number) => {
-    setMapConfirmDialog({ show: true, rai });
+  const handleMapAreaCalculated = (rai: number, lat: number, lng: number) => {
+    setMapConfirmDialog({ show: true, rai, lat, lng });
   };
 
   const confirmCreatePlotFromMap = () => {
-    const rai = mapConfirmDialog.rai;
-    setMapConfirmDialog({ show: false, rai: 0 }); 
+    const { rai, lat, lng } = mapConfirmDialog;
+    setMapConfirmDialog({ show: false, rai: 0, lat: 0, lng: 0 }); 
     
     setEditingPlot(null);
     setFormCode('');
+    setFormName(''); // 🌟 รีเซ็ตชื่อ
     setFormAreaRai(rai); 
+    setFormLat(Number(lat.toFixed(6))); 
+    setFormLon(Number(lng.toFixed(6)));
     setFormVariety(varieties.length > 0 ? varieties[0] : '');
     setFormCycle(cycles.length > 0 ? cycles[0] : '');
     setFormStatus('growing');
@@ -301,10 +315,13 @@ export default function PlotsPage() {
   const openEditModal = (plot: Plot) => {
     setEditingPlot(plot);
     setFormCode(plot.code);
+    setFormName(plot.name || ''); // 🌟 ดึงชื่อมาแก้ไข
     setFormAreaRai(plot.area_rai);
     setFormVariety(plot.variety);
     setFormCycle(plot.cycle);
     setFormStatus(plot.status);
+    setFormLat(plot.lat || ''); 
+    setFormLon(plot.lon || '');
     setShowModal(true);
   };
 
@@ -316,10 +333,13 @@ export default function PlotsPage() {
     setSaving(true);
     const plotData = {
       code: formCode.toUpperCase().trim(),
+      name: formName.trim() || null, // 🌟 บันทึกชื่อแปลง
       area_rai: Number(formAreaRai),
       variety: formVariety,
       cycle: formCycle,
       status: formStatus,
+      lat: formLat === '' ? null : Number(formLat), 
+      lon: formLon === '' ? null : Number(formLon),
       last_updated: new Date().toISOString()
     };
 
@@ -389,7 +409,7 @@ export default function PlotsPage() {
               <div className="flex flex-col justify-center">
                 <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none mb-1">จัดการข้อมูลแปลงพื้นที่</h1>
                 <p className="text-[11px] font-bold text-slate-500 leading-none hidden sm:block uppercase tracking-wider">
-                  บันทึกและติดตามข้อมูลแปลง สายพันธุ์ และรอบปลูก
+                  บันทึกและติดตามข้อมูลแปลง พิกัด และรอบปลูก
                 </p>
               </div>
             </div>
@@ -438,7 +458,7 @@ export default function PlotsPage() {
               </div>
               <div>
                 แผนที่ดาวเทียม <span className="hidden sm:inline">(Google Maps)</span>
-                <p className="text-[10px] text-slate-400 font-bold mt-0.5">ค้นหาสถานที่ หรือกดไอคอนห้าเหลี่ยม ⬟ มุมขวาบนเพื่อวาดแปลง</p>
+                <p className="text-[10px] text-slate-400 font-bold mt-0.5">กดห้าเหลี่ยม ⬟ เพื่อวาดแปลง ระบบจะคำนวณพื้นที่และจับ GPS ให้อัตโนมัติ</p>
               </div>
             </h2>
             <div className="flex gap-2">
@@ -471,6 +491,8 @@ export default function PlotsPage() {
                     </div>
                     <div className="min-w-0">
                       <h3 className="text-base font-black text-slate-900 truncate">แปลง {plot.code}</h3>
+                      {/* 🌟 แสดงชื่อแปลงใต้รหัสแปลงในการ์ดรายชื่อ */}
+                      {plot.name && <p className="text-xs font-bold text-emerald-600 truncate mt-0.5">{plot.name}</p>}
                       <p className="text-[10px] font-bold text-slate-400 truncate mt-0.5">
                         อัปเดต: {new Date(plot.last_updated).toLocaleDateString('th-TH', {day: '2-digit', month: 'short', year: '2-digit'})}
                       </p>
@@ -483,6 +505,18 @@ export default function PlotsPage() {
                     <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">ขนาดพื้นที่</span>
                     <span className="text-[15px] font-black text-slate-800">{plot.area_rai.toLocaleString()} <span className="text-[11px] text-slate-500">ไร่</span></span>
                   </div>
+                  
+                  <div className="flex justify-between items-center pb-3 border-b border-slate-100/80 gap-2">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0">พิกัด GPS</span>
+                    {plot.lat && plot.lon ? (
+                      <span className="text-[10px] font-black text-teal-700 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-md truncate font-mono">
+                        {plot.lat.toFixed(4)}, {plot.lon.toFixed(4)}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">ยังไม่ระบุพิกัด</span>
+                    )}
+                  </div>
+
                   <div className="flex justify-between items-center pb-3 border-b border-slate-100/80 gap-2">
                     <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0">สายพันธุ์</span>
                     <span className="text-[11px] font-black text-emerald-700 bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-md truncate">{plot.variety}</span>
@@ -524,17 +558,18 @@ export default function PlotsPage() {
 
       {mapConfirmDialog.show && (
         <div className="fixed inset-0 z-[140] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setMapConfirmDialog({ show: false, rai: 0 })}></div>
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setMapConfirmDialog({ show: false, rai: 0, lat: 0, lng: 0 })}></div>
           <div className="bg-white w-full max-w-sm rounded-[24px] p-6 sm:p-8 shadow-2xl relative z-10 text-center animate-in fade-in zoom-in-95 duration-200 border border-slate-200">
             <div className="w-16 h-16 bg-emerald-50 border border-emerald-200 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-5">
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>
             </div>
-            <h3 className="text-xl font-black text-slate-900 mb-2">คำนวณพื้นที่สำเร็จ</h3>
-            <p className="text-[13px] font-bold text-slate-500 mb-8 px-2 leading-relaxed">
-              ระบบคำนวณพื้นที่ได้ประมาณ <strong className="text-emerald-600 text-base">{mapConfirmDialog.rai}</strong> ไร่<br/>ต้องการนำไปสร้างเป็นแปลงใหม่หรือไม่?
+            <h3 className="text-xl font-black text-slate-900 mb-2">วาดแปลงสำเร็จ</h3>
+            <p className="text-[13px] font-bold text-slate-500 mb-6 px-2 leading-relaxed">
+              ระบบคำนวณพื้นที่ได้ประมาณ <strong className="text-emerald-600 text-base">{mapConfirmDialog.rai}</strong> ไร่<br/>
+              <span className="text-[11px] block mt-1">(พร้อมดึงพิกัดกึ่งกลางแปลงให้อัตโนมัติ)</span>
             </p>
             <div className="flex gap-3">
-              <button onClick={() => setMapConfirmDialog({ show: false, rai: 0 })} className="flex-1 py-3 bg-white border border-slate-300 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-colors text-[13px] shadow-sm">ยกเลิก</button>
+              <button onClick={() => setMapConfirmDialog({ show: false, rai: 0, lat: 0, lng: 0 })} className="flex-1 py-3 bg-white border border-slate-300 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-colors text-[13px] shadow-sm">ยกเลิก</button>
               <button onClick={confirmCreatePlotFromMap} className="flex-[1.5] py-3 bg-emerald-600 border border-emerald-700 text-white font-black rounded-xl hover:bg-emerald-700 shadow-md shadow-emerald-500/30 active:scale-[0.98] transition-all text-[13px]">
                 สร้างแปลงใหม่
               </button>
@@ -562,11 +597,20 @@ export default function PlotsPage() {
 
             <div className="p-6 overflow-y-auto custom-scrollbar bg-white space-y-5">
               
+              {/* 🌟 1. แถวแรก: รหัสแปลง และ ชื่อแปลงอ้อย */}
               <div className="flex flex-col sm:flex-row gap-5">
-                <div className="w-full sm:w-1/2">
-                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider mb-2 block ml-1">รหัสแปลงอ้อย</label>
-                  <input type="text" value={formCode} onChange={(e) => setFormCode(e.target.value)} placeholder="เช่น A-01, B-05" className="w-full px-4 py-3.5 bg-slate-50 border border-slate-300 rounded-xl font-black text-emerald-700 outline-none focus:bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm shadow-sm transition-all uppercase" />
+                <div className="w-full sm:w-1/3">
+                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider mb-2 block ml-1">รหัสแปลง</label>
+                  <input type="text" value={formCode} onChange={(e) => setFormCode(e.target.value)} placeholder="เช่น A-01" className="w-full px-4 py-3.5 bg-slate-50 border border-slate-300 rounded-xl font-black text-emerald-700 outline-none focus:bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm shadow-sm transition-all uppercase" />
                 </div>
+                <div className="w-full sm:w-2/3">
+                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider mb-2 block ml-1">ชื่อแปลงอ้อย (ระบุหรือไม่ก็ได้)</label>
+                  <input type="text" value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="เช่น แปลงทุ่งทอง โซนเหนือ..." className="w-full px-4 py-3.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 outline-none focus:bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm shadow-sm transition-all" />
+                </div>
+              </div>
+
+              {/* 🌟 2. แถวสอง: ขนาดพื้นที่ และ สถานะ */}
+              <div className="flex flex-col sm:flex-row gap-5">
                 <div className="w-full sm:w-1/2">
                   <label className="text-[11px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 uppercase tracking-wider mb-2 inline-block ml-1">ขนาดพื้นที่ (ไร่)</label>
                   <div className="relative">
@@ -574,8 +618,68 @@ export default function PlotsPage() {
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-sm">ไร่</span>
                   </div>
                 </div>
+                <div className="w-full sm:w-1/2">
+                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider mb-2 block ml-1">สถานะแปลงปัจจุบัน</label>
+                  <select value={formStatus} onChange={(e: any) => setFormStatus(e.target.value)} className="w-full px-4 py-3.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-bold outline-none focus:bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm shadow-sm transition-all appearance-none cursor-pointer">
+                    <option value="growing">🌱 กำลังเติบโต (กำลังบำรุง)</option>
+                    <option value="ready">🌾 รอเก็บเกี่ยว (อ้อยสุก)</option>
+                    <option value="harvesting">🚜 กำลังตัด (หน้างาน)</option>
+                    <option value="resting">💤 พักดิน (ไถกลบ/เตรียมแปลง)</option>
+                  </select>
+                </div>
               </div>
 
+              {/* 🌟 3. บล็อกจัดการพิกัด GPS */}
+              <div className="p-4 bg-teal-50/50 border border-teal-200 rounded-xl space-y-3">
+                <div className="flex justify-between items-center">
+                  <label className="text-[11px] font-black text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>📍</span> พิกัดแปลงอ้อย (Lat / Lon)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                          (pos) => {
+                            setFormLat(Number(pos.coords.latitude.toFixed(6)));
+                            setFormLon(Number(pos.coords.longitude.toFixed(6)));
+                            setPopup({ show: true, type: 'success', message: 'ดึงพิกัด GPS จากอุปกรณ์สำเร็จ!' });
+                          },
+                          () => setPopup({ show: true, type: 'error', message: 'ไม่สามารถเข้าถึง GPS ได้ กรุณาเปิด GPS บนอุปกรณ์ครับ' })
+                        );
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-[10px] font-black shadow-sm transition-all flex items-center gap-1.5 active:scale-95 uppercase tracking-wider"
+                  >
+                    <span>🎯</span> ดึงพิกัดจุดที่ยืนอยู่
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <input
+                      type="number"
+                      step="any"
+                      placeholder="ละติจูด (Latitude)"
+                      value={formLat}
+                      onChange={e => setFormLat(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                      className="w-full p-3 bg-white border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-700 outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 transition-all shadow-sm"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="number"
+                      step="any"
+                      placeholder="ลองจิจูด (Longitude)"
+                      value={formLon}
+                      onChange={e => setFormLon(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                      className="w-full p-3 bg-white border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-700 outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 transition-all shadow-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 🌟 4. แถวสาม: สายพันธุ์ และ รอบปลูก */}
               <div className="flex flex-col sm:flex-row gap-5">
                 <div className="w-full sm:w-1/2">
                   <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider mb-2 block ml-1">สายพันธุ์อ้อย</label>
@@ -596,16 +700,6 @@ export default function PlotsPage() {
                     <button type="button" onClick={() => openPromptDialog('cycle')} title="เพิ่มรอบการปลูกใหม่" className="bg-white border border-emerald-200 text-emerald-600 px-4 rounded-xl font-black text-lg hover:bg-emerald-50 hover:border-emerald-300 transition-colors shrink-0 shadow-sm">+</button>
                   </div>
                 </div>
-              </div>
-
-              <div>
-                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider mb-2 block ml-1">สถานะแปลงปัจจุบัน</label>
-                <select value={formStatus} onChange={(e: any) => setFormStatus(e.target.value)} className="w-full px-4 py-3.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-bold outline-none focus:bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm shadow-sm transition-all appearance-none cursor-pointer">
-                  <option value="growing">🌱 กำลังเติบโต (กำลังบำรุง)</option>
-                  <option value="ready">🌾 รอเก็บเกี่ยว (อ้อยสุก)</option>
-                  <option value="harvesting">🚜 กำลังตัด (หน้างาน)</option>
-                  <option value="resting">💤 พักดิน (ไถกลบ/เตรียมแปลง)</option>
-                </select>
               </div>
 
             </div>
